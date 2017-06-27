@@ -387,6 +387,19 @@ problems(x)
     
       parse_time("20:10:01")
       
+    #We can also create our own date time format using the following:
+      #Year
+        # %Y (4 digit year)
+        # %y (2 digit year: 00-69 -> 2000 - 2069; 70-99 -> 1970-1999)
+      #Month
+        # %m
+        # %m
+        # %m
+      #Day
+      
+      #Time
+      
+      
 ###############################################################
 #11.4: Parsing a file ##############################################
 ###############################################################
