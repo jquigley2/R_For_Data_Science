@@ -392,24 +392,199 @@ problems(x)
         # %Y (4 digit year)
         # %y (2 digit year: 00-69 -> 2000 - 2069; 70-99 -> 1970-1999)
       #Month
-        # %m
-        # %m
-        # %m
+        # %m (2 digits)
+        # %b (abbreviated name such as "Jan")
+        # %B (full name, "January")
       #Day
-      
+        # %d (2 digits)
+        # %e (optional leading spaces)
       #Time
+        # %H 0-23 hour
+        # %I 0-12, must be used with %p
+        # %pAM/PM indicator
+        # %Mminutes
+        # %S integer seconds
+        # %OS real seconds
+        # %z Time zone as name, e.g. America/New York (see more in "time zones")
+      parse_date("01/02/15", "%m/%d/%y")
       
+      parse_date("01/02/15", "%d/%m/%y")
+      
+      parse_date("01/02/15", "%y/%m/%d")
+      
+###############################################################
+#11.3.5: Exercises ##############################################      
+#1.What are the most important arguments to locale()?
+      
+#2.What happens if you try and set decimal_mark and grouping_mark to the same character? What happens to the default value of grouping_mark when you set decimal_mark to “,”? What happens to the default value of decimal_mark when you set the grouping_mark to “.”?
+      
+#3.I didn’t discuss the date_format and time_format options to locale(). What do they do? Construct an example that shows when they might be useful.
+      
+#4.If you live outside the US, create a new locale object that encapsulates the settings for the types of file you read most commonly.
+      
+#5.What’s the difference between read_csv() and read_csv2()?
+      
+#6.What are the most common encodings used in Europe? What are the most common encodings used in Asia? Do some googling to find out.
+      
+#7.Generate the correct format string to parse each of the following dates and times:
+        
+      d1 <- "January 1, 2010"
+      d2 <- "2015-Mar-07"
+      d3 <- "06-Jun-2017"
+      d4 <- c("August 19 (2015)", "July 1 (2015)")
+      d5 <- "12/30/14" # Dec 30, 2014
+      t1 <- "1705"
+      t2 <- "11:15:10.12 PM"
       
 ###############################################################
 #11.4: Parsing a file ##############################################
 ###############################################################
+#How does readr parse a file?  How does it guess the type of each column, and 
+#how can we override the default specs?
+      
+###############################################################
+#11.4.1: Strategy ##############################################
+#readr reads the first 100 rows and uses heuristics to figure out each column type
+           
+###############################################################
+#11.4.2: Problems ##############################################
+#Defaults don't always work for large files:
+  #1: First thousand rows may not be a representatitve sample
+  #2. The column might contain a lot of missing values, in which case readr assumes a character vector.
+challenge <- read_csv(readr_example("challenge.csv"))
 
+#If there is an issue parsing, it's wise to pull out the problems() to explore in depth:
+problems(challenge)
+      
+#Work column by column to resolve problems. There is a parsing problem witht he x column - 
+#trailing characters after the integer.  We need a double parser:
+
+#start by pasting column specs into original call:
+challenge <- read_csv(
+  readr_example("challenge.csv"),
+  col_types = cols(
+    x = col_integer(),
+    y = col_character()
+  )
+)
+  
+
+#tweak the type of the x colum:
+challenge <- read_csv(
+  readr_example("challenge.csv"),
+  col_types = cols(
+    x = col_double(),
+    y = col_character()
+  )
+)  
+
+#but last few rows are dates in a character vector:
+tail(challenge)
+
+#we can fix that by:
+challenge <- read_csv(
+  readr_example("challenge.csv"),
+  col_types = cols(
+    x = col_double(),
+    y = col_date()
+  )
+)  
+
+tail(challenge)
+
+#Every parse_xyz() function has a corresponding col_xyz() function. 
+#use parse_xyz() when the data is in a character vector in R already; 
+#use col_xyz() when you want to tell readr how to load the data.
+
+#highly recommend always supplying col_types, building up from the print-out provided by readr.
+
+#If you want to be really strict, use stop_for_problems() 
+#this will throw an error and stop your script if there are any parsing problems.
+
+
+###############################################################
+#11.4.3: Other Strategies ##############################################
+#A few other strategies to help parse problematic files:
+#Look at more rows of data:
+challenge2 <- read_csv(readr_example("challenge.csv"), guess_max = 1001)      
+
+problems(challenge2)      
+
+#It is sometimes easier to diagnose problems if we read everything in as character vectors:
+challenge2 <- read_csv(readr_example("challenge.csv"), 
+                       col_types = cols(.default = col_character())
+                       )      
+
+problems(challenge2)
+
+
+#If reading a very large file, we might set n_max to 10,000 or 100,000 while we work through problems.
 
 ###############################################################
 #11.5: Writing to a file ##############################################
 ###############################################################
+#readr also writes back to disk via write_csv() and write_tsv().  Each always:
+  #encodes strings in UTF-8
+  #saves dates and times in ISO8601 format
+
+#If you want to export a csv file to Excel, use write_excel_csv() — this writes a special character 
+#(a “byte order mark”) 
+#at the start of the file which tells Excel that you’re using the UTF-8 encoding.
+
+#The most important arguments are x (the data frame to save), and path (the location to save it). 
+#You can also specify how missing values are written with na, and if you want to append to an existing file.
+
+write_csv(challenge, "challenge.csv")
+
+#however, we do lose data type when we write to .csv.  We'd need to recreate types each time we read in.
+#Two alternatives:
+  #1.write_rds() and read_rds() are uniform wrappers around the base functions readRDS() and saveRDS(). 
+  #These store data in R’s custom binary format called RDS:
+write_rds(challenge, "challenge.rds")
+read_rds("challenge.rds")
+
+
+  #2. The feather package implements a fast binary code format which can be shared across languages:
+install.packages("feather")  
+library(feather)
+write_feather(challenge, "challenge.feather")
+read_feather("challenge.feather")
 
 
 ###############################################################
 #11.6: Other types of data ##############################################
 ###############################################################
+#Other tidyverse packages to imprt data include:
+#Haven reads SPSS, Stata and SAS files
+#readxl reads Excel files (.xls and .xlsx)
+#DBI allows us to run SQL queries
+
+
+###############################################################
+#12: Tidy Data ##############################################
+###############################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
