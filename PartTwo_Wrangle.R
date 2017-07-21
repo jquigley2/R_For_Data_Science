@@ -563,8 +563,287 @@ read_feather("challenge.feather")
 ###############################################################
 #12: Tidy Data ##############################################
 ###############################################################
+library(tidyverse)
+
+###############################################################
+#12.2: Tidy Data ##############################################
+#We can organize data many different ways.
+
+#The tidy dataset will be much easier to work with within the tidyverse.
+#Three inter-related rules make the dataset tidy:
+  #1. Each variable must have its own column
+  #2. Each observation must have its own row
+  #3. Each value must have its own cell
+
+#Two main advantages of having tidy data:
+  #1. It forces you to have a consistent way of storing data
+  #2. Placing variables in columns allows R to use vectors
+
+#Example:
+table1 %>%
+  mutate(rate=cases / population * 10000)
+
+#compute cases/year:
+table1 %>%
+  count(year, wt = cases)
+
+#visualize changes over time:
+library(ggplot2)
+ggplot(table1, aes(year, cases)) +
+  geom_line(aes(group=country), color="grey50") + 
+  geom_point(aes(color=country))
 
 
+
+###############################################################
+#12.2.1: Exercises ##############################################
+
+#1. Using prose, describe how the variables and observations are organised in each of the sample tables.
+
+#2. Compute the rate for table2, and table4a + table4b. You will need to perform four operations:
+  #1 Extract the number of TB cases per country per year.
+  #2 Extract the matching population per country per year.
+  #3 Divide cases by population, and multiply by 10000.
+  #4 Store back in the appropriate place.
+
+#3. Which representation is easiest to work with? Which is hardest? Why?
+
+#4. Recreate the plot showing change in cases over time using table2 instead of table1. What do you need to do first?
+
+###############################################################
+#12.3: Spreading and Gathering ##############################################
+#most data you encounter will be untidy, for one of two reasons:
+#1. Most people are unfamiliar with the principles of tidy data
+#2. Data is often organized with some other purpose in mind
+
+#When tidying data, step one is always identifying what the variables and observations are.
+#Step 2 is resolving one of 2 common issues:
+  #1. One variable may be spread across multiple columns
+  #2. One observation may be spread across multiple rows
+
+#To fix these two problems, the two most important functions in tidy are gather() and spread()
+
+###############################################################
+#12.3.1: Gathering ##############################################
+
+#A common issue is when column names aren't the names of variables, but values of a variable:
+table4a
+
+#To tidy, we need to gather those columns into a new pair of variables.  We need 3 parameters:
+  #The set of columns which represent values, not variables.  Here, these columns are 1999 and 2000.
+  #The name of the variable whose value forms the column names.  This is the "key"; here, it's "year"
+  #The name of the variable whose value is spread over the cells.  This is the "value"; here, it's # cases.
+
+table4a %>%
+  gather(`1999`, `2000`, key = "year", value="cases")# need to surround 1999 and 2000 with backticks b/c don't start w/ a letter
+
+#example 2:
+table4b
+table4b %>%
+  gather(`1999`, `2000`, key = "year", value="population")# need to surround 1999 and 2000 with backticks b/c don't start w/ a letter
+
+#We can then combine the tidied versions of 4a and 4b into a single tibble by using dplyr::left_join():
+tidy4a <- table4a %>%
+  gather(`1999`, `2000`, key = "year", value="cases")
+tidy4b <- table4b %>%
+  gather(`1999`, `2000`, key = "year", value="population")  
+left_join(tidy4a,tidy4b) #More about left_join in Chapter 13 "Relational Data"
+
+
+###############################################################
+#12.3.2: Spreading ##############################################
+#The opposite of gathering.  We use this when an observation is scattered accross multiple rows
+
+#here's an example:
+table2
+
+#To tidy, we analyze using 2 parameters:
+  #1. The column that contains the variable names, the "key" column.  Here, it's "type"
+  #2. The column that contains the values for multiple variables, the "value" column.  Here, it's "count"
+#Then, use spread:
+spread(table2, key=type, value=count)
+
+#So, spread and gather are complements:
+  #gather makes the tables narrower and longer; #spread makes them wider and shorter
+
+###############################################################
+#12.3.3: Exercises ##############################################
+#1. Why are gather() and spread() not perfectly symmetrical?
+#Carefully consider the following example:
+  
+stocks <- tibble(
+    year   = c(2015, 2015, 2016, 2016),
+    half  = c(   1,    2,     1,    2),
+    return = c(1.88, 0.59, 0.92, 0.17)
+  )
+stocks %>% 
+  spread(year, return) %>% 
+  gather("year", "return", `2015`:`2016`)
+
+#(Hint: look at the variable types and think about column names.)
+
+#Both spread() and gather() have a convert argument. What does it do?
+
+#2. Why does this code fail?
+
+table4a %>% 
+  gather(1999, 2000, key = "year", value = "cases")
+#> Error in combine_vars(vars, ind_list): Position must be between 0 and n
+
+#3. Why does spreading this tibble fail? How could you add a new column to fix the problem?
+
+people <- tribble(
+  ~name,             ~key,    ~value,
+  #-----------------|--------|------
+  "Phillip Woods",   "age",       45,
+  "Phillip Woods",   "height",   186,
+  "Phillip Woods",   "age",       50,
+  "Jessica Cordero", "age",       37,
+  "Jessica Cordero", "height",   156
+)
+
+#4. Tidy the simple tibble below. Do you need to spread or gather it? What are the variables?
+
+preg <- tribble(
+  ~pregnant, ~male, ~female,
+  "yes",     NA,    10,
+  "no",      20,    12
+)
+
+
+###############################################################
+#12.4: Separating and Uniting ##############################################
+#table3 has a different problem: we have one column "rate" which contains 2 variables: cases & population
+
+
+###############################################################
+#12.4.1: Separate ##############################################
+#To fix this, we use the "separate" function - the complement of which is the "unite" function:
+#"separate" pulls a single column apart into multiple columns
+table3
+#The "rate" coulnn contains both cases and population - we need to split these on the separator character:
+
+table3 %>%
+  separate(rate, into =c("cases", "population"))
+#"separate" takes the name of the column, and the names of the columns we want to split this one into
+
+#By default, "separate" splits wherever it sees a non-alphanumeric character.
+#If we want to specify, we can pass the character to the sep argument of separate.  For example:
+table3 %>%
+  separate(rate, into =c("cases", "population"), sep="/")
+
+#However, in each of these separate attempts, the column type remained character - not very useful! 
+#We can ask separate to try to convert the type by using convert=TRUE:
+table3 %>%
+  separate(rate, into =c("cases", "population"), sep="/", convert=TRUE)
+#now, these are integer type!
+
+#Can also pass a vector of integers to sep.  separate() will interpret the integers as positions to split at.
+#Positive values start at 1 on the far-lefto f strings, negative values at -1 on the far right.
+#When using integers, the length of sep s/b 1 less than the number of names in into.
+
+#EX: separate the last 2 digits of each year:
+table3 %>%
+  separate(year, into =c("century", "year"), sep=2)
+
+
+###############################################################
+#12.4.2: Unite ##############################################
+#The inverse of separate: combines multiple columns into a single column.
+#We can use this to re-join the years we just split (result is in table5)
+#unite() takes a data frame, the name of the new variable to create, and a set of columns to combine:
+table5
+
+table5 %>%
+  unite(new, century, year)
+#However, the default handling placed an underscore between values from different columns.  We can overwrite by using "":
+table5 %>%
+  unite(new, century, year, sep = "")
+
+
+###############################################################
+#12.4.3: Exercises ##############################################
+#1. What do the extra and fill arguments do in separate()? Experiment with the various options for the following two toy datasets.
+
+tibble(x = c("a,b,c", "d,e,f,g", "h,i,j")) %>% 
+  separate(x, c("one", "two", "three"))
+
+tibble(x = c("a,b,c", "d,e", "f,g,i")) %>% 
+  separate(x, c("one", "two", "three"))
+
+#2. Both unite() and separate() have a remove argument. 
+#What does it do? 
+#Why would you set it to FALSE?
+
+#3. Compare and contrast separate() and extract(). 
+#Why are there three variations of separation (by position, by separator, and with groups), but only one unite?
+
+
+###############################################################
+#12.5: Missing Values ##############################################
+#Values can be missing in two ways:
+#Explicitly: i.e. flagged with an N/A
+#Implicitly i.e. simply not present in the data
+
+stocks <- tibble(
+  year   = c(2015, 2015, 2015, 2015, 2016, 2016, 2016),
+  qtr    = c(   1,    2,    3,    4,    2,    3,    4),
+  return = c(1.88, 0.59, 0.35,   NA, 0.92, 0.17, 2.66))
+
+stocks
+
+#Two missing values in this dat set:
+#Q4 2015 return is NA
+#Q1 2016 does not appear
+
+#We can make implicit missing values explicit by representing the values differently.
+#For example, putting the years into columns:
+stocks %>%
+  spread(year, return)
+
+#If these aren't importnat, we can drop with na.rm = TRUE in gather():
+stocks %>%
+  spread(year, return) %>%
+  gather(year, return, `2015`, `2016`, na.rm=TRUE)
+  
+
+#Another great tool is complete(), which takes a set of columns and finds all unique combinations:
+stocks%>%
+  complete(year, qtr)
+
+#Lastly... Sometimes when a data source has been used for data entry, missing data indicates the previous value s/b carried forward:
+treatment <- tribble(
+  ~person, ~treatment, ~response,
+  "Derrick Whitmore",1,7,
+  NA,2,10,
+  NA,3,9,
+  "Katherine Burke",1,4
+)
+
+treatment
+
+#We can fill these missing values with fill().  fill() takes a set of columns where we want missing value to be replaced 
+#by the most recent non-missing values:
+treatment %>%
+  fill(person)
+
+
+###############################################################
+#12.5.1: Exercises ##############################################
+
+#1. Compare and contrast the fill arguments to spread() and complete().
+
+#2. What does the direction argument to fill() do?
+
+
+###############################################################
+#12.6: Case Study ##############################################
+
+
+###############################################################
+#12.7: Non-tidy Data ##############################################
+#If you’d like to learn more about non-tidy data, 
+#I’d highly recommend this thoughtful blog post by Jeff Leek: http://simplystatistics.org/2016/02/17/non-tidy-data/
 
 
 
