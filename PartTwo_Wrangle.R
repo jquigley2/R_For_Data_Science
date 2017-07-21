@@ -838,6 +838,21 @@ treatment %>%
 
 ###############################################################
 #12.6: Case Study ##############################################
+#The tidyr::who dataset contains TB cases broken down by year, country, age, gender, and diagnosis method
+#The data comes from the 2014 World Health Organization Global Tuberculosis Report, 
+#available at http://www.who.int/tb/country/data/download/en/.
+
+who #A wealth of data, but very hard to work with.
+#Redundant columns, missing data, odd variable codes...
+#We'll need ot string together multiple tidy functions into a pipeline to clean this up.
+
+#Best place to start is usually to gather together columns which aren't variables:
+  #country, iso2 and iso3 are three variable which redundantly specify country
+  #year is clearly a variable
+  #other columns are unclear, but these are likely to be values, not variables
+
+
+
 
 
 ###############################################################
