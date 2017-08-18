@@ -844,7 +844,7 @@ treatment %>%
 
 who #A wealth of data, but very hard to work with.
 #Redundant columns, missing data, odd variable codes...
-#We'll need ot string together multiple tidy functions into a pipeline to clean this up.
+#We'll need to string together multiple tidy functions into a pipeline to clean this up.
 
 #Best place to start is usually to gather together columns which aren't variables:
   #country, iso2 and iso3 are three variable which redundantly specify country
@@ -857,14 +857,33 @@ who #A wealth of data, but very hard to work with.
 
 ###############################################################
 #12.7: Non-tidy Data ##############################################
+
+#Two main reasons to use data structure other than tidy:
+  #alternative representations may have substantial space advantage or better performance
+  #specialized field may have evolved different conventions for storing their data
+
 #If you’d like to learn more about non-tidy data, 
 #I’d highly recommend this thoughtful blog post by Jeff Leek: http://simplystatistics.org/2016/02/17/non-tidy-data/
 
 
+###############################################################
+#13: Relational Data ##############################################
+###############################################################
 
 
+###############################################################
+#14: Strings  ##############################################
+###############################################################
 
 
+###############################################################
+#15: Factors ##############################################
+###############################################################
+
+
+###############################################################
+#16: Dates & Times ##############################################
+###############################################################
 
 
 
