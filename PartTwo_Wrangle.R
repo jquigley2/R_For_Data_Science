@@ -851,6 +851,31 @@ who #A wealth of data, but very hard to work with.
   #year is clearly a variable
   #other columns are unclear, but these are likely to be values, not variables
 
+#So, we want to gather together all columns from new_sp_m014 through newrel_f65
+#Since we don't know what these mean, we'll call them "key"
+#We do know the cells represent count of cases, so we'll use the variable "cases"
+#Since there are so many missing values, we'll use na.rm
+
+who1 <- who %>%
+  gather(new_sp_m014:newrel_f65, key= "key", value= "cases", na.rm = TRUE)
+
+who1
+
+#We can get a hint of the structure of the values in the new key column by counting them:
+who1 %>%
+  count(key)
+
+#The data dictionary tells us:
+  #1.) the first three letters of each column denote whether the column contains new or old cases of TB
+  #2.) next two letter describe the type of TB:
+    #re1 stands for relapse
+    #ep stands for extrapulmonary case of TB
+    #sn stands for TB cases not disgnosed by pulmonary smear
+    #sp stands for smear positive
+  #3.) Sixth letter gives the sex of the patient
+  #4.) Remaining number give the age group: "014" = 0-14, "15-24" = 15-25, etc...
+
+
 
 
 
