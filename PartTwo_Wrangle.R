@@ -416,13 +416,13 @@ problems(x)
 #11.3.5: Exercises ##############################################      
 #1.What are the most important arguments to locale()?
       
-#2.What happens if you try and set decimal_mark and grouping_mark to the same character? What happens to the default value of grouping_mark when you set decimal_mark to “,”? What happens to the default value of decimal_mark when you set the grouping_mark to “.”?
+#2.What happens if you try and set decimal_mark and grouping_mark to the same character? What happens to the default value of grouping_mark when you set decimal_mark to b ,b ? What happens to the default value of decimal_mark when you set the grouping_mark to b .b ?
       
-#3.I didn’t discuss the date_format and time_format options to locale(). What do they do? Construct an example that shows when they might be useful.
+#3.I didnb t discuss the date_format and time_format options to locale(). What do they do? Construct an example that shows when they might be useful.
       
 #4.If you live outside the US, create a new locale object that encapsulates the settings for the types of file you read most commonly.
       
-#5.What’s the difference between read_csv() and read_csv2()?
+#5.Whatb s the difference between read_csv() and read_csv2()?
       
 #6.What are the most common encodings used in Europe? What are the most common encodings used in Asia? Do some googling to find out.
       
@@ -527,9 +527,9 @@ problems(challenge2)
   #encodes strings in UTF-8
   #saves dates and times in ISO8601 format
 
-#If you want to export a csv file to Excel, use write_excel_csv() — this writes a special character 
-#(a “byte order mark”) 
-#at the start of the file which tells Excel that you’re using the UTF-8 encoding.
+#If you want to export a csv file to Excel, use write_excel_csv() b  this writes a special character 
+#(a b byte order markb ) 
+#at the start of the file which tells Excel that youb re using the UTF-8 encoding.
 
 #The most important arguments are x (the data frame to save), and path (the location to save it). 
 #You can also specify how missing values are written with na, and if you want to append to an existing file.
@@ -539,7 +539,7 @@ write_csv(challenge, "challenge.csv")
 #however, we do lose data type when we write to .csv.  We'd need to recreate types each time we read in.
 #Two alternatives:
   #1.write_rds() and read_rds() are uniform wrappers around the base functions readRDS() and saveRDS(). 
-  #These store data in R’s custom binary format called RDS:
+  #These store data in Rb s custom binary format called RDS:
 write_rds(challenge, "challenge.rds")
 read_rds("challenge.rds")
 
@@ -848,11 +848,22 @@ who #A wealth of data, but very hard to work with.
 
 #Best place to start is usually to gather together columns which aren't variables:
   #country, iso2 and iso3 are three variable which redundantly specify country
-  #year is clearly a variable
+  #year is clearly also variable
   #other columns are unclear, but these are likely to be values, not variables
 
+#So, gather together the columns from new_sp_m014 to newre1_f65.
+  #we don't know what these codes represent, so we give them the vale "key"
+  #we do know cell values represent #cases, so we use the variable "cases"
+  #there are many mssing values, so use na.rm:
+who1 <- who%>%
+  gather(new_sp_m014:newrel_f65, key= "key", value = "cases", na.rm = TRUE)
 
+#check result:
+who1
 
+#Get a hint of the data structure of the values in the "key" column by counting them:
+who1 %>%
+  count(key)
 
 
 ###############################################################
@@ -862,8 +873,8 @@ who #A wealth of data, but very hard to work with.
   #alternative representations may have substantial space advantage or better performance
   #specialized field may have evolved different conventions for storing their data
 
-#If you’d like to learn more about non-tidy data, 
-#I’d highly recommend this thoughtful blog post by Jeff Leek: http://simplystatistics.org/2016/02/17/non-tidy-data/
+#If you'd like to learn more about non-tidy data, 
+#I'd highly recommend this thoughtful blog post by Jeff Leek: http://simplystatistics.org/2016/02/17/non-tidy-data/
 
 
 ###############################################################
