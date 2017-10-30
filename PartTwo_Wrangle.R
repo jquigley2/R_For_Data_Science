@@ -1288,15 +1288,93 @@ setdiff(df1, df2)
 setdiff(df2, df1)
 
 
+<<<<<<< HEAD
+=======
 ###############################################################
 #14: Strings  ##############################################
 ###############################################################
+#stringr isn't part of the core tidyverse, so we need ot load it:
+library(stringr)
+library(tidyverse)
+
+###############################################################
+#14.2: String basics  #########################################
+#We can create strings with single or double quotes; there is no difference in behavior.
+string1 <- "This is a string"
+string2 <- 'If I want to include a "quote" inside a string, I use single quotes'
+string2
+
+#If you forget to close a quote, you'll see +, the continuation character:
+#"This is a string without a closing quote
+
+#To include a literal single or double quote in a string, you can use \ to "escape" it:
+double_quote <- "\"" # or '"'
+single_quote <- '\'' # or "'"
+#If you want to include a literal backslash, you need to double up: "\\"
+
+#To see the raw content of a string, use writeLines():
+x <- c("\"", "\\")
+x
+writeLines(x)
+
+
+#14.2.1: String basics  #########################################
+
+
+#14.2.2: String basics  #########################################
+
+
+#14.2.3: String basics  #########################################
+
+
+#14.2.4: String basics  #########################################
+
+
+#14.2.5: String basics  #########################################
+
+
+>>>>>>> 423e8d317417095252a340a40393a508a756e442
+###############################################################
+#14.3: Matching patterns w/ regular expressions  ################
+
+#14.3.1: Basic Matches  ################
+
+
+#14.3.2: Anchors  ################
+
+
+#14.3.3: Character classes and alternatives  ################
+
+
+#14.3.4: Repetition  ################
+
+
+#14.3.5: Exercise  ################
+
+
+###############################################################
+#14.4: Tools  ##############################################
+
+
+###############################################################
+#14.5: Other types of pattern  ##############################################
+
+
+###############################################################
+#14.6: Other uses of regular expression  ##############################################
+
+
+###############################################################
+<<<<<<< HEAD
 #Focus here is on regular expressions, or regexps for short.  Regexps are a concise language for 
 #describing patterns in strings - which usually contain unstructured or semi-structured data.
 
 #stringr isn't part of the core tidyverse, so we need to load it:
 library(stringr)
 library(tidyverse)
+=======
+#14.7: stringi  ##############################################
+>>>>>>> 423e8d317417095252a340a40393a508a756e442
 
 
 ###############################################################
