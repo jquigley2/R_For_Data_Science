@@ -851,6 +851,7 @@ who #A wealth of data, but very hard to work with.
   #year is clearly also variable
   #other columns are unclear, but these are likely to be values, not variables
 
+<<<<<<< HEAD
 #So, gather together the columns from new_sp_m014 to newre1_f65.
   #we don't know what these codes represent, so we give them the vale "key"
   #we do know cell values represent #cases, so we use the variable "cases"
@@ -864,7 +865,58 @@ who1
 #Get a hint of the data structure of the values in the "key" column by counting them:
 who1 %>%
   count(key)
+=======
+#So, we want to gather together all columns from new_sp_m014 through newrel_f65
+#Since we don't know what these mean, we'll call them "key"
+#We do know the cells represent count of cases, so we'll use the variable "cases"
+#Since there are so many missing values, we'll use na.rm
 
+who1 <- who %>%
+  gather(new_sp_m014:newrel_f65, key= "key", value= "cases", na.rm = TRUE)
+
+who1
+>>>>>>> e30908340a8d2b192f9d86b940a44723cc42a225
+
+#We can get a hint of the structure of the values in the new key column by counting them:
+who1 %>%
+  count(key)
+
+#The data dictionary tells us:
+  #1.) the first three letters of each column denote whether the column contains new or old cases of TB
+  #2.) next two letter describe the type of TB:
+    #re1 stands for relapse
+    #ep stands for extrapulmonary case of TB
+    #sn stands for TB cases not disgnosed by pulmonary smear
+    #sp stands for smear positive
+  #3.) Sixth letter gives the sex of the patient
+  #4.) Remaining number give the age group: "014" = 0-14, "15-24" = 15-25, etc...
+
+
+#Column names are slightly inconsistent; one is newrel rather than new_rel.  We'll use str_replace()
+#to replace newrel with new_rel. (More on strings in chapter 14).
+who2 <- who1 %>%
+  mutate(key=stringr::str_replace(key, "newrel", "new_rel"))
+
+who2
+
+#We can break the "key" column down into its components with two passes of separate():
+#First, split the codes at each underscore:
+who3 <- who2 %>%
+  separate(key, c("new","type","sexage"), sep = "_")
+
+who3
+
+#Next, we can drop columns which are either constant or redundant.  For example, we can drop "new" and "iso2"
+who4 <- who3 %>%
+  select(-new, -iso2)
+
+who4
+
+#Last, separate sexage into sex and age by splitting after the first character:
+who5 <- who4 %>%
+  separate(sexage, c("sex", "age"), sep = 1)
+
+who5 #Congrats, the who dataset is now tidy!
 
 ###############################################################
 #12.7: Non-tidy Data ##############################################
@@ -880,11 +932,561 @@ who1 %>%
 ###############################################################
 #13: Relational Data ##############################################
 ###############################################################
+###############################################################
+#13.1:Intro ##############################################
+
+#To work with relational data, we need verbs which work with pairs of tables.  There are
+#3 families of verbs designed to work with relational data:
+    #Mutating Joins: add new variables to one data frame by matching observations in another
+    #Filtering Joins: filter observations from one data frame based on whether or not they match an observation in the other table
+    #Set Operations:treat observations as if they were set elements
+
+library(tidyverse)
+library(nycflights13)
+
+###############################################################
+#13.2:nycflights13 ##############################################
+#This data set contains 4 tibbles which are related to the flights table we used in Chapter 5.
+
+#1.) airlines lets us look up the full carrier name from the abbreviated code:
+airlines
+
+#2.) airports gives info about each airport, identified by the faa airport code:
+airports
+
+#3.) planes gives info about each plane, identified by its tailnum:
+planes
+
+#4.) gives the weather at each NYC airport for each hour:
+weather
+
+#For nycflights13:
+  #flights connects to planes via a single variable, tailnum
+  #flights connects to airlines through the carrier variables
+  #flights connects to airports in two ways: via the origin and dest variables
+  #flights connects to weather via origin and year month day and hour.
+
+################
+#13.2.1: Exercises
+#Imagine you wanted to draw (approximately) the route each plane flies from its origin to its destination. 
+#What variables would you need? What tables would you need to combine?
+#A: dest and origin from flights tables, and lat and long from airports table.  Join to get lat & long for both orig and dest.
+
+#I forgot to draw the relationship between weather and airports. What is the relationship and how should it appear in the diagram?
+#A: origin in weather joins with faa in airports
+
+#weather only contains information for the origin (NYC) airports. 
+#If it contained weather records for all airports in the USA, what additional relation would it define with flights?
+#A: dest year month day hour orig
+
+#We know that some days of the year are b specialb , and fewer people than usual fly on them. 
+#How might you represent that data as a data frame? What would be the primary keys of that table? 
+#How would it connect to the existing tables?
+#A: create a holiday table, and connect to flights via year month day
+
+###############################################################
+#13.3:Key s##############################################
+#Variables used to connect tables are called keys.  A key uniquely identifies an observation.
+#tailnum identifies each unique plane.  
+#In other instances, a combination of variables may be needed. For weather, year month day hour and original are ALL required.
+
+#Two types of keys:
+  #primary key: uniquely identifies an observation in its own table: ex: planes$tailnum
+  #foreign key: uniquely identifies an observation in another table.  For example, flights$tailnum is a foreign key.
+    #It appears in the flights table, where it matches each flight to a unique plane
+
+#A variable can be a primary key and a foreign key.  
+  #For example, origin is part of the weather primary key, and is also a foreign key for the airport table
+
+#Once you've identified the primary key, you should verify they uniquely identify each observation.  We can do this by count() 
+#the primary key and look for entries where n > 1:
+planes %>%
+  count(tailnum) %>%
+  filter(n>1)
+
+weather %>%
+  count(year,month,day,hour,origin) %>%
+  filter(n>1)
+
+#Sometimes a table lacks a primary key; no combination of variables is unique to a row.  
+#For example, flights liack a primary key.  Niether date + flight, nor date + tailnum are unique: 
+flights %>%
+  count(year,month,day,flight) %>%
+  filter(n>1)
+
+flights %>%
+  count(year,month,day,tailnum) %>%
+  filter(n>1)
+
+flights %>%
+  count(year,month,day, flight, tailnum) %>%
+  filter(n>1)
+#In cases like this, it's often useful to add a primary key by using mutate() and row_number().
+#This is known as a surrogate key.
+
+#A primary key and the corresponding foreign key in another table form a relation.
+#relations are typically one-to-many.
+################
+#13.3.1: Exercises
+#1.) Add a surrogate key to flights.
+flights %>% 
+  arrange(year, month, day, sched_dep_time, carrier, flight) %>%
+  mutate(flight_id = row_number()) %>%
+  glimpse()
+
+#2.)Identify the keys in the following datasets
+  #Lahman::Batting,
+  #babynames::babynames
+  #nasaweather::atmos
+  #fueleconomy::vehicles
+  #ggplot2::diamonds
+#(You might need to install some packages and read some documentation.)
+
+#3.)Draw a diagram illustrating the connections between the Batting, Master, and Salaries tables in the Lahman package. 
+
+#Draw another diagram that shows the relationship between Master, Managers, AwardsManagers.
+
+#How would you characterise the relationship between the Batting, Pitching, and Fielding tables?
+
+
+###############################################################
+#13.4:Mutationg joins  ##############################################
+#A mutating join allows us to combine variables from more than one table.
+#Like mutate(), the join functions add variables to the right, so if you have a lot of variables already, the new ones won't print.
+#Let's make a narrower data set:
+flights2 <- flights %>%
+  select(year:day, hour, origin, dest, tailnum, carrier)
+
+flights2
+
+#Let's add the full airline name to the flights2 data.  We can do this via left_join():
+flights2 %>%
+  select(-origin, -dest) %>%
+  left_join(airlines, by = "carrier")
+
+#In this case, we could have gotten to the same place by using mutate() and R's base subsetting:
+flights2 %>%
+  select(-origin, -dest) %>%
+  mutate(name=airlines$name[match(carrier,airlines$carrier)])
+
+
+###############13.4.1 Understanding Joins #######################
+x <- tribble(
+  ~key, ~val_x,
+  1, "x1",
+  2, "x2",
+  3, "x3"
+)
+
+y <- tribble(
+  ~key, ~val_x,
+  1, "y1",
+  2, "y2",
+  4, "y3"
+)
+###############13.4.2 Inner Join #######################
+#The simplest type of join is the inner join.  This matches observations wherever their keys are equal.
+#The output of an inner join is a new data frame which contsains the key, x values, and y values.
+#We use "by" to tell dplyr which variable is the key:
+x %>%
+  inner_join(y, by = "key")
+#Unmatched row ARE NOT INCLUDED.
+
+###############13.4.3 Outer Joins #######################
+#An outer join keeps observartions which appear in at least one of the tables.
+#Three types of outer joins:
+  #left join: keeps all observations in x
+x %>%
+  left_join(y, by = "key")
+
+  #right join:keeps all observayions in y
+x %>%
+  right_join(y, by = "key")
+
+  #full join: keeps all observations in x and y
+x %>%
+  full_join(y, by = "key")
+#left join is the most commonly used.  
+
+###############13.4.4 Duplicate keys #######################
+#What happens when keys are not unique?  There are 2 possibilities:
+  #1.) One table has duplicate keys. This may be useful if adding information in a one-to-many relationship.
+x <-  tribble(
+  ~key, ~val_x,
+  1, "x1",
+  2, "x2",
+  2, "x3",
+  1, "x4"
+)
+
+y <- tribble(
+  ~key, ~val_y,
+  1, "y1",
+  2, "y2"
+)
+
+left_join(x,y,by="key")
+
+  #2.) Both tables have duplicate keys. This is often an error.
+x <- tribble(
+  ~key, ~val_x,
+  1, "x1",
+  2, "x2",
+  2, "x3",
+  3, "x4"
+)
+y <- tribble(
+  ~key, ~val_y,
+  1, "y1",
+  2, "y2",
+  2, "y3",
+  3, "y4"
+)
+left_join(x, y, by = "key")
+#> # A tibble: 6 C 3
+#>     key val_x val_y
+#>   <dbl> <chr> <chr>
+#> 1     1    x1    y1
+#> 2     2    x2    y2
+#> 3     2    x2    y3
+#> 4     2    x3    y2
+#> 5     2    x3    y3
+#> 6     3    x4    y4
+
+###############13.4.5 Defining the key columns #######################
+#Above, the pairs of tables were joined on a single variable with the same name in both tables.  This was encoded by 'by="key" '
+#There are other options:
+
+  #1.) A natural join uses all variable which appear in both tables, and is encoded by 'by=NULL'.
+  #flights and weather will match on their common variables: year, month, day, hour, and orig:
+flights2 %>%
+  left_join(weather)
+
+  #2.) A character vector, 'by="x" '.  Like a natural join, but uses only some of the common variables, not all of them.
+  #This may be due to the fact that a variable name in one table may be present in the second table, but mean something different.
+  #flights and planes have year variables, but they mean different things, therefore, join only on tailnum:
+flights2 %>%
+  left_join(planes, by="tailnum")
+  #both year's are output, but with a suffix to denote them.
+
+  #3.) A named character vector:' by = c("a" = "b")'.  This matches variable a in table x to variable b in table y.  The 
+  #variables from x are used in the output:
+flights2 %>%
+  left_join(airports, c("dest"="faa"))
+
+flights2 %>%
+  left_join(airports, c("origin"="faa"))
+
+
+###############13.4.6 Exercises #######################
+#1.)Compute the average delay by destination, then join on the airports data frame so you can show the spatial distribution of delays. Hereb s an easy way to draw a map of the United States:
+  
+  airports %>%
+  semi_join(flights, c("faa" = "dest")) %>%
+  ggplot(aes(lon, lat)) +
+  borders("county") +
+  geom_point() +
+  coord_quickmap()
+
+#(Donb t worry if you donb t understand what semi_join() does b  youb ll learn about it next.)
+#You might want to use the size or colour of the points to display the average delay for each airport.
+
+#2.)Add the location of the origin and destination (i.e. the lat and lon) to flights.
+#3.)Is there a relationship between the age of a plane and its delays?
+#4.)What weather conditions make it more likely to see a delay?
+#5.)What happened on June 13 2013? Display the spatial pattern of delays, and then use Google to cross-reference with the weather.
+
+###############13.4.7 Other implementations #######################
+
+
+###############################################################
+#13.5:Filtering Joins  ##############################################
+#These match observations in the same way as mutating joins, but affect the observations, not the variables.
+#There are two types of filtering joins:
+  #1.) semi_join(x,y) keeps all observations in x that have a match in y
+  #2.) anti-join(x,y) drops all observations in x that have a match in y
+#These are useful for matching filtered summary tables back to the original rows.  
+#For example, let's say you've found the 10 most popular destinations:
+top_dest <- flights %>%
+  count(dest, sort = TRUE) %>%
+  head(10)
+top_dest
+
+#Now, if you want to find each flight which went to one of those destinations, construct a filter:
+flights %>%
+  filter(dest %in% top_dest$dest)
+
+#Instead, use semi-join, which connects the two tables like a mutating join, but instead of adding new columns, 
+#keeps only the rows in x that have a match in y:
+flights %>%
+  semi_join(top_dest)
+
+#The inverse of a semi-join is an anti-join.  This keeps only the rows which DO NOT have a match.
+#Very useful in diagnosing join mismatches.  For example, many flights don't have a match in planes!
+flights %>%
+  anti_join(planes, by="tailnum") %>%
+  count(tailnum, sort=TRUE)
+
+#########Exercises#########################################
+#What does it mean for a flight to have a missing tailnum? 
+#1.)What do the tail numbers that donb t have a matching record in planes have in common? 
+#(Hint: one variable explains ~90% of the problems.)
+
+#2.)Filter flights to only show flights with planes that have flown at least 100 flights.
+
+#3.)Combine fueleconomy::vehicles and fueleconomy::common to find only the records for the most common models.
+
+#4.)Find the 48 hours (over the course of the whole year) that have the worst delays. 
+#Cross-reference it with the weather data. Can you see any patterns?
+
+#5.)What does anti_join(flights, airports, by = c("dest" = "faa")) tell you? 
+#What does anti_join(airports, flights, by = c("faa" = "dest")) tell you?
+
+#6.) You might expect that thereb s an implicit relationship between plane and airline, because each plane is 
+#flown by a single airline. Confirm or reject this hypothesis using the tools youb ve learned above.
+
+###############################################################
+#13.6:Join problems  ##############################################
+#A few things you should do with your data to make your joins go smoothly:
+#1.) Start by identifying the primary key, or the variables which can be combined to for the primary key.  Do this
+#based on an understanding of the data, not by searching empirically - later version of your data might not work the same.
+
+#2.) Check that none of the variables in the primary key column are missing.  If a value is missing, we can't identify an abs.
+
+#3.) Check that foreign keys match primary keys in another table.  The best way to do this is with an anti_join().  It's
+#common for key not to match due to data entry errors.
+#If we have missing keys, we need to consider how to handle observations without a match.
+
+###############################################################
+#13.7:Set operations  ##############################################
+#The final type of two-table verb are set operators.
+#These operations work with a complete row, comparing the values of every variable.
+#These expect the x and y inputs to have the same variables
+  #intersect(x,y): return only the observations in both x and y
+  #union(x,y): return unique observation in x and y
+  #setdiff(x,y): return only the observations in x, but not in y
+
+#Examples:
+#Date Set:
+df1 <- tribble(
+  ~x, ~y,
+  1,  1,
+  2,  1
+)
+df2 <- tribble(
+  ~x, ~y,
+  1,  1,
+  1,  2
+)
+
+intersect(df1, df2)
+
+union(df1, df2)
+
+setdiff(df1, df2)
+
+setdiff(df2, df1)
 
 
 ###############################################################
 #14: Strings  ##############################################
 ###############################################################
+#Focus here is on regular expressions, or regexps for short.  Regexps are a concise language for 
+#describing patterns in strings - which usually contain unstructured or semi-structured data.
+
+#stringr isn't part of the core tidyverse, so we need to load it:
+library(stringr)
+library(tidyverse)
+
+
+###############################################################
+#14.2: String basics  #########################################
+#We can create strings with single or double quotes; there is no difference in behavior.  Book recommends using double, "
+string1 <- "This is a string"
+string2 <- 'If I want to include a "quote" inside a string, I use single quotes'
+string2
+writeLines(string2)
+
+#If you forget to close a quote, you'll see +, the continuation character:
+#"This is a string without a closing quote
+
+#To include a literal single or double quote in a string, you can use \ to "escape" it:
+double_quote <- "\"" # or '"'
+single_quote <- '\'' # or "'"
+#If you want to include a literal backslash, you need to double up: "\\"
+
+#The printed representation of a string is not the same as the string itself, because it shows the escapes.
+#To see the raw content of a string, use writeLines():
+x <- c("\"", "\\")
+x
+writeLines(x)
+writeLines(string2)
+
+#There are a few more extra characters, such as "\n" new line, and "\t" tab.
+#You'll sometimes see strings such as "\u00b5", which are ways of writing non-English characters which work on all platforms.
+x <- "\u00b5"
+x
+writeLines(x)
+
+#Multiple strings are often stored in a character vector, which we create with c():
+c("one","two","three")
+
+#14.2.1: String Length  #########################################
+The base R functions for strings can be inconsistent and therefore hard to remember.  Better to use stringr, which is more intuitive.
+For example, str_length tells us the number of characters in a string:
+str_length(c("a", "R for Data Science", NA))  
+
+#The "str_" prefix is great in R Studio, since it triggers automcomplete, which lets us see all stringr functions
+
+
+#14.2.2: Combining Strings #########################################
+#To combine 2 or more strings, use str_c():
+str_c("x","y")
+
+#Use the sep argument to control how they are separated:
+str_c("x","y", sep = ", ")
+
+#Missing values are contagious.  If you want to print them as "NA", use str_replace_na():
+x <- c("abc", NA)
+str_c("|-", x, "|-")
+str_c("|-", str_replace_na(x), "|-")
+
+#str_ is vectorized, and recycles shorter vetors to match the longest vector:
+str_c("prefix-", c("a","b","c"), "-suffix")
+
+#Objects of length 0 are silently dropped.  This is useful in conjunction with if
+name <- "Hadley"
+time_of_day <- "morning"
+birthday <- FALSE
+
+str_c(
+  "Good ", time_of_day, ", ", name,
+  if(birthday) " - and Happy Birthday",
+  "."  
+)
+
+#To collapse a vector of strings into a single string, use collapse:
+str_c(c("x","y","z"),collapse = ", ")
+
+
+#14.2.3: Subsetting Strings #########################################
+#We can extract parts of a string using str_sub().  
+#As well as the string, str_sub() takes start and end argument which indicate the inclusive portion of the string:
+?str_sub
+x <- c("Apple", "Banana", "Pear")
+str_sub(x,1,3)
+
+#negative numbers count backward from teh end of the string:
+str_sub(x,-3,-1)
+
+#Note that sub_str() will not fail if the string is too short; it will return what it can:
+str_sub("a",1,5)
+
+#We can use the assignment form of str_sub() to modify strings:
+#Let's change first letters t0 lower case
+str_sub(x, 1, 1) <- str_to_lower(str_sub(x,1,1))
+x
+
+
+#14.2.4: Locales #########################################
+x <- c("apple", "eggplant", "banana")
+str_sort(x)
+
+
+#14.2.5: Exercises #########################################
+#1.)In code that doesn???t use stringr, you???ll often see paste() and paste0(). What???s the difference between the two functions? 
+#What stringr function are they equivalent to? 
+#How do the functions differ in their handling of NA?
+
+#2.)In your own words, describe the difference between the sep and collapse arguments to str_c().
+
+#3.)Use str_length() and str_sub() to extract the middle character from a string. 
+#What will you do if the string has an even number of characters?
+
+#4.)What does str_wrap() do? When might you want to use it?
+
+#5.)What does str_trim() do? What???s the opposite of str_trim()?
+
+#6.)Write a function that turns (e.g.) a vector c("a", "b", "c") into the string a, b, and c. 
+#Think carefully about what it should do if given a vector of length 0, 1, or 2.
+
+###############################################################
+#14.3: Matching patterns w/ regular expressions  ################
+#"Regexps" are a terse language which allows us to describe patterns in strings.
+#To learn regular exressions, we'll use str_view() and str_view_all()
+#These take a character vestor and a regular expression, and show you how they match
+
+#14.3.1: Basic Matches  ################
+#Simplest pattern match exact strings:
+x <- c("apple", "banana", "pear")
+str_view(x,"an") #highlights "an" in banana (in the Viewer pane).
+
+#Slightly more cmplex is ., which matches any character (except a new line):
+str_view(x, ".a") #any character followed by "a"
+
+#Since "." matches any character, how would we match the character "."?  Use an "escape"...
+#To create the regular expression, we need \\
+dot <- "\\."
+#But the expression itself only contains one:
+writeLines(dot)
+#And this tells R to look for an explicit .
+str_view(c("abc", "a.c", "bef"), "a\\.c")
+
+#Since \ is used as an escape character in regular expressions, how do we match a literal \?
+#We need to escape it, creating a regular expression \\.  To create this, we need to use a string, which also needs to escape \.
+#So, we need to write "\\\\"
+x <- "a\\b"
+writeLines(x)
+str_view(x, "\\\\")
+
+#14.3.1.1: Exercises  ################
+#1.) Explain why each of these strings don???t match a \: "\", "\\", "\\\".
+
+#2.) How would you match the sequence "'\?
+
+#3.) What patterns will the regular expression \..\..\.. match? How would you represent it as a string?
+
+
+#14.3.2: Anchors  ################
+#By default, regular exxpressions will match any part of a string.
+#It's useful to anchor them so that they match from the start or the end of a string.
+  # use ^ to mtch the start of the string
+  # use $ to match the end of the string 
+
+x <- c("apple", "banana", "pear")
+str_view(x, "^a")
+
+str_view(x, "$a")
+#To help remember which is which: You begin with Power ^, you end with money $".
+
+#To force a regular expression to only match a complete string, anchor it with both:
+x <- c("apple pie", "apple", "apple cake")
+
+#GitTest
+ 
+#14.3.3: Character classes and alternatives  ################
+
+
+#14.3.4: Repetition  ################
+
+
+#14.3.5: Exercise  ################
+
+
+###############################################################
+#14.4: Tools  ##############################################
+
+
+###############################################################
+#14.5: Other types of pattern  ##############################################
+
+
+###############################################################
+#14.6: Other uses of regular expression  ##############################################
+
+
+###############################################################
+#14.7: stringi  ##############################################
 
 
 ###############################################################
@@ -895,13 +1497,6 @@ who1 %>%
 ###############################################################
 #16: Dates & Times ##############################################
 ###############################################################
-
-
-
-
-
-
-
 
 
 
