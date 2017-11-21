@@ -1067,7 +1067,7 @@ flights2 %>%
 #In this case, we could have gotten to the same place by using mutate() and R's base subsetting:
 flights2 %>%
   select(-origin, -dest) %>%
-  mutate(name=airlines$name[match(carrier,airlines$carrier)])
+  mutate(name=airlines$name[match(carrier,airlines$aarrier)])
 
 
 ###############13.4.1 Understanding Joins #######################
@@ -1288,94 +1288,12 @@ setdiff(df1, df2)
 setdiff(df2, df1)
 
 
-<<<<<<< HEAD
-=======
 ###############################################################
 #14: Strings  ##############################################
 ###############################################################
-#stringr isn't part of the core tidyverse, so we need ot load it:
-library(stringr)
-library(tidyverse)
-
-###############################################################
-#14.2: String basics  #########################################
-#We can create strings with single or double quotes; there is no difference in behavior.
-string1 <- "This is a string"
-string2 <- 'If I want to include a "quote" inside a string, I use single quotes'
-string2
-
-#If you forget to close a quote, you'll see +, the continuation character:
-#"This is a string without a closing quote
-
-#To include a literal single or double quote in a string, you can use \ to "escape" it:
-double_quote <- "\"" # or '"'
-single_quote <- '\'' # or "'"
-#If you want to include a literal backslash, you need to double up: "\\"
-
-#To see the raw content of a string, use writeLines():
-x <- c("\"", "\\")
-x
-writeLines(x)
-
-
-#14.2.1: String basics  #########################################
-
-
-#14.2.2: String basics  #########################################
-
-
-#14.2.3: String basics  #########################################
-
-
-#14.2.4: String basics  #########################################
-
-
-#14.2.5: String basics  #########################################
-
-
->>>>>>> 423e8d317417095252a340a40393a508a756e442
-###############################################################
-#14.3: Matching patterns w/ regular expressions  ################
-
-#14.3.1: Basic Matches  ################
-
-
-#14.3.2: Anchors  ################
-
-
-#14.3.3: Character classes and alternatives  ################
-
-
-#14.3.4: Repetition  ################
-
-
-#14.3.5: Exercise  ################
-
-
-###############################################################
-#14.4: Tools  ##############################################
-
-
-###############################################################
-#14.5: Other types of pattern  ##############################################
-
-
-###############################################################
-#14.6: Other uses of regular expression  ##############################################
-
-
-###############################################################
-<<<<<<< HEAD
-#Focus here is on regular expressions, or regexps for short.  Regexps are a concise language for 
-#describing patterns in strings - which usually contain unstructured or semi-structured data.
-
 #stringr isn't part of the core tidyverse, so we need to load it:
 library(stringr)
 library(tidyverse)
-=======
-#14.7: stringi  ##############################################
->>>>>>> 423e8d317417095252a340a40393a508a756e442
-
 
 ###############################################################
 #14.2: String basics  #########################################
@@ -1454,7 +1372,7 @@ str_c(c("x","y","z"),collapse = ", ")
 x <- c("Apple", "Banana", "Pear")
 str_sub(x,1,3)
 
-#negative numbers count backward from teh end of the string:
+#negative numbers count backward from the end of the string:
 str_sub(x,-3,-1)
 
 #Note that sub_str() will not fail if the string is too short; it will return what it can:
@@ -1472,7 +1390,7 @@ str_sort(x)
 
 
 #14.2.5: Exercises #########################################
-#1.)In code that doesn???t use stringr, you???ll often see paste() and paste0(). What???s the difference between the two functions? 
+#1.)In code that doesn't use stringr, you'll often see paste() and paste0(). What'???'s the difference between the two functions? 
 #What stringr function are they equivalent to? 
 #How do the functions differ in their handling of NA?
 
@@ -1483,7 +1401,7 @@ str_sort(x)
 
 #4.)What does str_wrap() do? When might you want to use it?
 
-#5.)What does str_trim() do? What???s the opposite of str_trim()?
+#5.)What does str_trim() do? Whats the opposite of str_trim()?
 
 #6.)Write a function that turns (e.g.) a vector c("a", "b", "c") into the string a, b, and c. 
 #Think carefully about what it should do if given a vector of length 0, 1, or 2.
@@ -1492,14 +1410,14 @@ str_sort(x)
 #14.3: Matching patterns w/ regular expressions  ################
 #"Regexps" are a terse language which allows us to describe patterns in strings.
 #To learn regular exressions, we'll use str_view() and str_view_all()
-#These take a character vestor and a regular expression, and show you how they match
+#These take a character vector and a regular expression, and show you how they match
 
 #14.3.1: Basic Matches  ################
-#Simplest pattern match exact strings:
+#Simplest pattern  - match exact strings:
 x <- c("apple", "banana", "pear")
 str_view(x,"an") #highlights "an" in banana (in the Viewer pane).
 
-#Slightly more cmplex is ., which matches any character (except a new line):
+#Slightly more cmplex is ., which matches any character (except a new line) - aka a wild card:
 str_view(x, ".a") #any character followed by "a"
 
 #Since "." matches any character, how would we match the character "."?  Use an "escape"...
@@ -1527,7 +1445,7 @@ str_view(x, "\\\\")
 
 #14.3.2: Anchors  ################
 #By default, regular exxpressions will match any part of a string.
-#It's useful to anchor them so that they match from the start or the end of a string.
+#It can be useful to anchor them so that they match from the start or the end of a string.
   # use ^ to mtch the start of the string
   # use $ to match the end of the string 
 
@@ -1539,42 +1457,1685 @@ str_view(x, "$a")
 
 #To force a regular expression to only match a complete string, anchor it with both:
 x <- c("apple pie", "apple", "apple cake")
+str_view(x, "apple")
 
-#GitTest
- 
+str_view(x, "^apple$")
+
+#We can match the boundary between words with \b.  For example, use \bsum\b to avoid matching summarize, summary, rowsum,...
+
+
 #14.3.3: Character classes and alternatives  ################
+#There are special patterns which match more than one character.  We saw the wildcard, ., earlier
+#Four other useful tools:
+  #\d matches any digit
+  #\s matches any whitespace
+  #[abc] matches any a,b, or c
+  #[^abc] matches anything except a,b, or c
+
+#We can use alternation to pick between one or more alternative patterns.  For example, abc|d..f will match either "abc" or "deaf".
+#If precedence gets confusing, use parentheses to make it clearer:
+
+str_view(c("grey","gray"), "gr(e|a)y")
 
 
 #14.3.4: Repetition  ################
+#Next step up in power is controlling how many times a pattern matches:
+  #?: 0 or 1
+  #+: 1 or more
+  #*: 0 or more
 
+x <- "1888 is the longest year in Roman numerals: MDCCCLXXXVIII"
+str_view(x, "CC?")
 
-#14.3.5: Exercise  ################
+str_view(x, "CC+")
+
+str_view(x, 'C[LX]+')
+
+#We can also specify the number of matches precisely:
+  #{n}  : exactly n
+  #{n,} : n or more
+  #{,m} : at most m
+  #{n,m}: between n and m
+
+str_view(x, "C{2}")
+
+str_view(x, "C{2,}")
+
+str_view(x, "C{2,3}")
+#By default, these strings are considered "greedy"; they will match the longest string possible.
+#Make them lazy (shortest strring possible) by putting a ? after them:
+str_view(x, "C{2,3}?")
+
+str_view(x, 'C[LX]+?')
+
+#14.3.5: Grouping and Backreferences  ################
+#As described above, parentheses can be used to disambiguate complex expressions.
+#Parentheses can also be used to to define "groups" which we can refer to with backreferences such as: \1, \2, etc...
+str_view(fruit, "(..)\\1", match=TRUE) #.. is a double wildcard; so this finds any 2 letter groups which repeat at least once
 
 
 ###############################################################
 #14.4: Tools  ##############################################
+#Now we learn how to apply the regular expression tools to real problems, such as:
+  #Determine which strings match a pattern
+  #Find the position of matches
+  #Extract the content of matches
+  #Replace matches with new values
+  #Split a string based on a match
+
+#CAUTION!: Do not try to solve every problem with a single regular expression.  
+#It's often preferable to break the problem into more manageable chunks.
+
+
+#14.4.1: Detect Matches  ##############################################
+#To determine whether a character vector matches a pattern, use str_detect().  THis returns
+# a logical vestor the same length as the input:
+x <- c("apple", "banana", "pear")
+str_detect(x, "e")
+
+#Remember, when we use a logical vector in a numeric contest, FALSE = 0, TRUE=1
+#This makes sum() and mean() useful if we want to ask questions about matches across a large vector
+
+#How many words start with "t"?:
+sum(str_detect(words, "^t")) 
+
+#What proportion of words end with a vowel?:
+mean(str_detect(words, "[aeiou]$")) 
+
+#As mentioned above, for very complex logical conditions, it's better to combine multiple str_detect() calls.
+#For example, here are two ways to find all words which don't contain any vowels:
+
+#Find all words containing at least one vowel, and negate:
+no_vowels_1 <- !str_detect(words, "[aeiou]")
+#Find all words which contain only consonants
+no_vowels_2 <- str_detect(words, "^[^aeiou]+$")
+
+#do the results agree?
+identical(no_vowels_1, no_vowels_2)
+
+#We get the same results, but option one is easier to read
+
+#Common use of str_detect is to select elements which match a pattern.
+#We can do this with a logical sub-setting, or by using the str_subset() wrapper:
+words[str_detect(words, "x$")]
+str_subset(words, "x$")
+
+#More often, strings will be one column of a data frame, and we should use a filter instead:
+df <- tibble(
+  word = words,
+  i = seq_along(word)
+)
+df %>%
+  filter(str_detect(words, "x$"))
+
+#A variation on str_detect() is str_count():  Rather than a simple yes or no, it returns the # of matches:
+x <- c("apple", "banana", "pear")
+
+#how many times does "a" appear in each?
+str_count(x, "a")
+
+#On average, how many vowels per word?
+mean(str_count(words, "[aeiou]"))
+
+#We can also use str_count() with mutate():
+df %>%
+  mutate(
+    vowels = str_count(word, "[aeiou]"),
+    consonants = str_count(word, "[^aeiou]")
+  )
+
+#NOTE: Matches neer overlap.  For example, in "abababa", how many times will the pattern "aba" match?
+#Answer: regular expressions says 2, not three:
+str_count("abababa", "aba")
+str_view_all("abababa", "aba")
+
+
+#14.4.2: Exercises  ##############################################
+
+
+
+#14.4.3: Extract Matches  ##############################################
+#To extract the exact text of a match, use str_extract().
+#Let's use a more complicated example, which was orignally used to test VOIP:
+#These are the Harvard Sentences, provided in stringr::sentences (there are 720 sentences):
+
+length(sentences)
+head(sentences)
+
+#If we want to find all sentences which contain a color, we first create a vector of color names:
+colors <- c(
+  "red", "orange", "yellow", "green", "blue", "purple"
+)
+#and then turn it into a regular expression:
+color_match <-str_c(colors, collapse = "|")
+
+color_match
+
+#Next, select the sentences which contain a color, and then extract the color to figure out which it is:
+has_color <- str_subset(sentences, color_match)
+
+has_color
+
+matches <- str_extract(has_color, color_match)
+
+head(matches)
+#Note: str_extract() only extracts the first match.  We can see this if we select all sentences which have >1 match:
+more <- sentences[str_count(sentences, color_match) >1]
+str_view_all(more, color_match)
+
+str_extract(more, color_match)
+
+#AWorking with a single match alows us to extract much simpler data structures.
+#To get all matches, use str_extract_all().  This returns a list:
+str_extract_all(more, color_match)
+
+#Use simplify=TRUE,, and str_extract_all will return a matrix withshort matches expanded to the same length as the longest:
+str_extract_all(more, color_match, simplify = TRUE)
+
+
+
+#14.4.4: Grouped Matches  ##############################################
+#We can use parentheses to extract parts of a complex match.
+#Suppose we want to extract nouns from sentences.  Our heuristic is anything which follows "a" or "the" is a noun.
+#Since defining a word isn't easy, we create an approximation:  a sequence of at least one character which isn't a space.
+noun <- "(a|the) ([^ ]+)"
+
+has_noun <- sentences %>%
+  str_subset(noun) %>%
+  head(10)
+
+has_noun %>%
+  str_extract(noun)
+#str_extract gives us the complete match; str_match() yields each individual component.
+#It returns a matrix, with ne column for the complete match followed by one column for each group:
+has_noun %>%
+  str_match(noun)
+
+#If your data is in a tibble, it's often easier to use tidyr::extract().
+#Works like str_match(), but requires naming the matches, which are then places into columns:
+
+tibble(sentence = sentences) %>%
+  tidyr::extract(
+    sentence, c("article", "noun"), "(a|the) ([^ ]+)",
+    remove = FALSE
+  )
+
+#If we want all matches for each string, use str_extract_all()
+
+
+#14.4.5: Replacing Matches  ##############################################
+#str_replace() and str_replace_all() all you to replace matches with new strings.
+#Replace a pattern with a fixed string:
+x <- c("apple", "pear", "banana")
+str_replace(x, "[aeiou]", "-")
+str_replace_all(x, "[aeiou]", "-")
+
+#With str_replace_all(), we can perform multiple replacements by supplying named vector:
+x <- c("1 house", "2 cars", "3 people")
+str_replace_all(x, c("1"="one", "2"="two", "3"="three"))
+
+#Insted of replacing with a fixed string, you can use backreferences to insert components of the match.
+#here, we flip the order of the second and third words:
+sentences %>%
+  str_replace("([^ ]+) ([^ ]+) ([^ ]+)", "\\1 \\3 \\2") %>%
+  head(5)
+
+
+#14.4.6: Splitting  ##############################################
+#Use str_split to split a string into pieces.  For example, split sentences into words:
+sentences%>%
+  head(5)%>%
+  str_split(" ")
+
+#Because each component might contain a different # of pieces, this returns a list.
+#If working with a length-1 vector, it's easier to extract the first elelment of the list:
+"a|b|c|d" %>%
+  str_split("\\|") %>%
+  .[[1]]
+
+#Or, we can use simplify = TRUE to return a matrix:
+sentences %>%
+  head(5) %>%
+  str_split(" ", simplify = TRUE)
+
+#You can also request a max number of pieces:
+fields <- c("Name: Hadley", "Country: NZ", "Age: 35")
+fields %>% str_split(": ", n=2, simplify = TRUE)
+
+#Instead of splitting strings by patterns, we can split by character, line, sentence, or word boundary:
+x <- "This is a sentence.  This is another sentence."
+str_view_all(x, boundary("word"))
+
+str_split(x, " ")[[1]]
+
+str_split(x, boundary("word"))[[1]]
+
+
+#14.4.7: Find Matches  ##############################################
+#str_locate() and str_locate_all() give us the starting and ending position of each match.
+#You can use sr_locate to find the matching pattern, and str_sub to extract or modify them.
+
 
 
 ###############################################################
-#14.5: Other types of pattern  ##############################################
+#14.5: Other types of Pattern  ##############################################
+#When we use a pattern that's astring, it's automatically wrapped into a call to regex():
+
+#The regular call:
+str_view(fruit, "nana")
+#Is shorthand for 
+str_view(fruit, regex("nana"))
+
+#We can use other arguments of regex() to control details of the match:
+
+  #ignore_case = TRUE allows characters to match either their upper or lower case form
+bananas <- c("banana", "Banana", "BANANA")
+str_view(bananas, "banana")
+str_view(bananas, regex("banana", ignore_case = TRUE))
+
+
+  #multiline = TRUE allows ^ and $ to match the start and end of each line, rather than the 
+  #start and end of each string.
+x <-  "Line 1\nLine 2\nLine 3"
+str_extract_all(x, "^Line")[[1]]  
+str_extract_all(x, regex("^Line", multiline = TRUE))[[1]]  
+
+  #comments = TRUE allows you to use comments and white space to make complex regular expressions more understandable.
+  #Spaces are ignored, as is everything after #.  To match a literal space, you need to escape it: "\\ ".
+phone <- regex("
+    \\(?       #Optional opening parens
+    (\\d{3})    #area code
+    [)- ]?     #optional closing parens, dash, or space
+    (\\d{3})   #another 3 numbers
+    [ -]?      #optional space or dash
+    (\\d{4})   #4 more numbers   
+    ", comments = TRUE)
+
+str_match("514-791-8141", phone)
+  
+  #dotall = TRUE allows . to match everything, including \n.
+#There are three other functions you can use nstead of regex():
+  
+  #fixed() matches exactly the specified sequence of bytes. It ignores all special regular expressions and 
+#operates at a very low level, so you can avoid complex escaping.
+fixed = str_detect(sentences, fixed("the"))
+  
+  #coll() compares strings using standard collation rules.  Useful for case-intensive matching.  coll() takes a local parameter
+#that compares which rules are used for comparing charcters.
+i <- c("I", "??", "i", "??")
+i
+str_subset(i, coll("i", ignore_case = TRUE))
+
+str_subset(
+  i,
+  coll("i", ignore_case = TRUE, locale = "tr")
+)
+
+  #boundary() can be used with functions other than str_split()
+x <- "This is a sentence"
+str_view_all(x, boundary("word"))
+
+str_extract_all(x, boundary("word"))
 
 
 ###############################################################
-#14.6: Other uses of regular expression  ##############################################
+#14.6: Other uses of Regular Expression  ##############################################
+#Two useful functiions in base R which also use regular expressions:
 
+  #apropos() searches all objects available from teh global environment - useful if you can't remember the name of a function
+apropos("replace")
+
+  #dir() lists all the files in a directory.  The pattern argument takes a regular expression and only returns filenames that match the pattern.
+head(dir(pattern = "\\.Rmd$"))
 
 ###############################################################
 #14.7: stringi  ##############################################
+#stringr is built on top of stringi. stringr is a more limited set of functions (42 vs. 234 for stringi)
+#if you are struggling with something in stringr, try stringi.
+#The main difference is the prefix: str_ versus stri_.
 
 
 ###############################################################
-#15: Factors ##############################################
+#15: Factors##############################################
 ###############################################################
+#In R, factors are used to work with categorical variables - variables which have a fixed and known set of outcomes.
+
+#Prerequisites: forcats package deals with categorical variables, but is not part of the base tidyverse.
+library(tidyverse)
+library(forcats)
+library(dplyr)
+library(ggplot2)
+
+###############################################################
+#15.2: Creating Factors  ##############################################
+#Say you have a variable which records month:
+x1 <- c("Dec", "Apr", "Jan", "Mar")
+#Using a string to record these has 2 problems:
+  #There are only 12 months, and nothing is saving us from typos:
+x2 <- c("Dec", "Apr", "Jam", "Mar" )
+  #It doesn't sort in a useful way:
+sort(x1)
+
+#Fix both problems with a factor.  Start by creating a list of valid levels:
+month_levels <- c(
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"
+)
+#Now, we can create a factor:
+y1 <- factor(x1, levels=month_levels)
+y1
+sort(y1)
+#Any values not in the set are silently converted to NA:
+y2 <- factor(x2, levels = month_levels)
+y2
+
+#If you omit levels, they'll be taken from teh data in alphabetical order:
+factor(x1)
+
+#If you want the order of the levels to match the order of the first appearance in the data,
+#you can create but setting the levels to unique(x), or after the fact with fct_inorder():
+f1 <- factor(x1, levels=unique(x1))
+f1
+
+f2 <- x1 %>% factor() %>% fct_inorder()
+f2
 
 
 ###############################################################
-#16: Dates & Times ##############################################
+#15.3: General Social Survey  ##############################################
+#For the balance of the chapter, we'll focus on forcats::gss_cat, a sample fo data from the General Social Survey (http://gss.norc.org)
+gss_cat
+?gss_cat
+
+#When factors are stored in a tibble, it's not easy to see levels.  One way to see them is with count():
+gss_cat %>%
+  count(race)
+
+#Or with a bar chart:
+ggplot(gss_cat, aes(race))+
+  geom_bar()
+
+#By default, ggplot2 will drop levels which don't have any value.
+#To force them in:
+ggplot(gss_cat, aes(race))+
+  geom_bar() +
+  scale_x_discrete(drop = FALSE)
+#These represent valid levels which simply didn't occur in our set.
+
 ###############################################################
+#15.4: Modifying Factor Order  ##############################################
+#It's often useful to change the order of the factor levels in a visualization.
+#For example, we want to explore the #hours spent watching TV per religion.
+relig <- gss_cat %>%
+  group_by(relig) %>%
+  summarize(
+    age = mean(age, na.rm = TRUE),
+    tvhours = mean(tvhours, na.rm = TRUE),
+  )
+
+ggplot(relig, aes(tvhours, relig)) + geom_point()
+
+#We can improve the readability of the plot by reordering, using fct_reorder().  This takes 3 arguments:
+  #f, the factor whose level you want to modify
+  #x, a numeric vector that you want to use to reorder the levels
+  #Optionally, fun, a function which is used if there are multiple values of x for each value of f.  Default value is median:
+
+ggplot(relig, aes(tvhours, fct_reorder(relig, tvhours))) +
+  geom_point()
+
+#As we make more complicated xforms, move them out of aes() and into a separate mutate() step:
+relig %>%
+  mutate(relig = fct_reorder(relig, tvhours)) %>%
+  ggplot(aes(tvhours, relig))+
+  geom_point()
+
+#Create a similar plot to see how averge age varies across reported income level:
+rincome <- gss_cat %>%
+  group_by(rincome) %>%
+  summarize(
+    age=mean(age, na.rm=TRUE),
+    tvhours=mean(tvhours, na.rm=TRUE),
+    n=n()
+  )
+
+
+ggplot(
+  rincome,
+  aes(age, fct_reorder(rincome, age))
+) + geom_point()
+#This re-ordering makes little sense, because income level has an intrinsic order
+
+#But, it does make sense to pull N/A to the front of the order, along with other special levels
+#For this, we use fct_relevel() - which allows us to re-order bits and pieces
+?fct_relevel
+
+ggplot(
+  rincome,
+  aes(age, fct_relevel(rincome, "Not applicable"))
+) +
+  geom_point()
+
+#When coloring lines on a plot, a second kind of re-ordering is useful.  fct_reorder2() reorders the factors by the y
+#values associated with the highest x values.  That way, the colors line up with the legend:
+by_age <- gss_cat %>%
+  filter(!is.na(age)) %>%     #remove obs where age = NA
+  group_by(age, marital) %>%  #order by age, marital status
+  count() %>%                 #count number in each group
+  mutate(prop = n/sum(n))#adds a new column of information #######SUM isn't working..???
+
+ggplot(by_age, aes(age, prop, color = marital )) +
+  geom_line(na.rm = TRUE)
+
+ggplot(
+  by_age,
+  aes(age, prop, color = fct_reorder2(marital, age, prop))
+)  +
+  geom_line() +
+  labs(color = "marital")
+
+#For bar plots, use fct_infreq() to order levels in increasing frequency
+#You might want to combine with fct_rev()
+?fct_rev
+gss_cat%>%
+  mutate(marital=marital %>% fct_infreq() %>% fct_rev())%>%
+  ggplot(aes(marital)) +
+  geom_bar()
+
+
+###############################################################
+#15.5: Modifying Factor Levels  ##############################################
+#Changing the values of levels is more powerful than changing the order.
+#This alows us to clarify labels for publication and collapse levels for high level displays.
+#fct_recode() is the most general and powerful too.  For example:
+
+gss_cat %>% count(partyid) #returns a 10x2 tibble
+
+#Let's tweak the levels to be longer:
+gss_cat %>%
+  mutate(partyid = fct_recode(partyid,
+      "Republican, strong"    = "Strong republican",
+      "Republican, weak"      = "Not str republican",
+      "Independent, near rep" = "Ind, near rep",
+      "Independent, near dem" = "Ind, near dem",
+      "Democrat, weak"      = "Not str democrat",
+      "Democrat, strong"    = "Strong democrat"
+)) %>%
+  count(partyid)
+#fct_recode() will leave levels which aren't explicitly mentioned exactly as they were.
+
+#We can combine groups by assigning multiple old levels to a new level:
+gss_cat %>%
+  mutate(partyid = fct_recode(partyid,
+                              "Republican, strong"    = "Strong republican",
+                              "Republican, weak"      = "Not str republican",
+                              "Independent, near rep" = "Ind,near rep",
+                              "Independent, near dem" = "Ind,near dem",
+                              "Democrat, weak"        = "Not str democrat",
+                              "Democrat, strong"      = "Strong democrat",
+                              "Other"                 = "No answer",  
+                              "Other"                 = "Don't know",
+                              "Other"                 = "Other party"
+                              )) %>%
+  count(partyid)
+
+#If we want to collapse a large number of fields, fct_collapse() is a useful variation.
+#With fct_collapse, we feed a vector of lod levels into a new variable:
+gss_cat %>%
+  mutate(partyid = fct_collapse(partyid,
+                                other = c("No answer", "Don't know", "Other party"),
+                                rep = c("Strong republican", "Not str republican"),
+                                ind = c("Ind,near rep", "Independent", "Ind,near dem"),
+                                dem = c("Not str democrat", "Strong democrat")
+                                )) %>%
+  count(partyid)
+
+#We may also want to lump together all small groups to simplify a plot or table.  Use fct_lump() to do this:
+gss_cat %>%
+  mutate(relig=fct_lump(relig)) %>%
+  count(relig)
+#If this lumps too many together, use the n parameter:
+gss_cat %>%
+  mutate(relig=fct_lump(relig, n=3)) %>%
+  count(relig, sort = TRUE)
+
+
+###############################################################
+#16: Dates & Times with Lubridate##############################
+###############################################################
+#This chapter focuses on the lubridate package, which makes it easier to work with dates and times in R
+#lubridate is not part of the core tidyverse
+library(tidyverse)
+library(lubridate)
+library(nycflights13)
+
+###############################################################
+#16.2: Creating Date/Times  ##############################################
+#There are three types of date/time data which refer to an instance in time:
+  #A date.  Tibbles print this as <date>.
+  #A time within a day.  Tibbles print this as <time>.
+  #A date-time is a date plus a time.  Tibbles print this as <dttm>.  Elsewhere in R, these are called POSIXct.
+#This chapter focuses on date and date-time.  
+#R doesn't have a native class for storing times.  If you need one, use the hms package.
+
+#Always use the simplest possible data type for your needs.  Date-times are substantially more complicated than Date.
+
+#To get current date or date-time, use today() or now():
+today() #Date
+
+now() #date-time
+
+#Otherwise, there are three ways to create a date/time:
+  #From a string
+  #From individual date-time components
+  #From an existing date/time object
+
+#16.2.1: From Strings  ##############################################
+#Use helpers provided by lubridate - they automatically work out the format once you specify the order of the components.
+#Just identify the order in which year, month and day appear, then arrange y, m and d in the same order:
+ymd("2017-01-31")
+mdy("01-31-2017")
+dmy("31-01-2017")
+
+#The function also takes unquoted numbers, as you might need when filtering date/time data:
+ymd(20170131)
+
+#To create date-time, add an underscore and one or more of h, m , and s:
+ymd_hms("20170131 20:11:59")
+mdy_hm("01/31/2017 08:01")
+
+
+#16.2.2: From Individual Components  ##############################################
+#Sometime date-time components will be spread across multile columns, as in thre flights data
+flights %>%
+  select(year, month, day, hour, minute)
+
+#To create a date-time from this, use make_date() for dates, or make_datetime() for date-times
+flights %>%
+  select(year, month, day, hour, minute) %>%
+  mutate(
+    departure=make_datetime(year, month, day, hour, minute)
+  )
+
+#Here, we do the same thing for each of the 4 tie columns in "flights".  
+make_datetime_100 <- function(year, month, day, time) {
+  make_datetime(year, month, day, time %/% 100, time %% 100)
+}
+
+flights_dt <- flights %>%
+  filter(!is.na(dep_time), !is.na(arr_time)) %>%
+  mutate(
+    dep_time = make_datetime_100(year, month, day, dep_time),
+    arr_time = make_datetime_100(year, month, day, arr_time),
+    sched_dep_time = make_datetime_100(year, month, day, sched_dep_time),
+    sched_arr_time = make_datetime_100(year, month, day, sched_arr_time),
+  )
+
+flights_dt
+
+#Now, we can visualize the distribution of departure times across the year:
+flights_dt %>%
+  ggplot(aes(dep_time)) +
+  geom_freqpoly(binwidth = 86400) #86400 seconds = 1 day
+
+#Or, within a single day:
+flights_dt %>%
+  filter(dep_time < ymd(20130102)) %>%
+  ggplot(aes(dep_time)) + 
+  geom_freqpoly(binwidth = 600) #600 seconds = 10 minutes
+
+
+#16.2.3: From Other Types  ##############################################
+#To switch between a date-time and a date, use as_datetime() or as_date():
+as_datetime(today())
+
+as_date(now())
+
+
+#16.2.4: Exercises  ##############################################
+
+
+
+###############################################################
+#16.3: Date-time components  ##############################################
+#This section focuses on the accessor functions year(), month(), mday() (day of the month), 
+#yday() (day of the year), wday() (day of the week), hour(), minute(), and second().
+
+#16.3.1: Getting components  ##############################################
+datetime <- ymd_hms("2016-07-08 12:34:56")
+
+year(datetime)
+month(datetime)
+mday(datetime)
+yday(datetime)
+wday(datetime)
+
+#For month & day, we can set label = TRUE to return the abbreviated day of the month or day of the week.
+#Set abbr = FALSE to return the full name:
+month(datetime, label = TRUE)
+month(datetime, label = TRUE, abbr = FALSE)
+
+#Use wday() to see more flights depart on weekdays than weekends:
+flights_dt %>%
+  mutate(wday = wday(dep_time, label = TRUE)) %>%
+  ggplot(aes(x = wday)) +
+  geom_bar()
+
+#we can examine the departure delay by minute within the hour.
+flights_dt %>%
+  mutate(minute = minute(dep_time)) %>%
+  group_by(minute) %>%
+  summarize(
+    avg_delay = mean(arr_delay, na.rm = TRUE),
+    n = n()) %>%
+  ggplot(aes(minute, avg_delay)) +
+  geom_line()
+#Flights leaving between 20-30 and 50-60 minutes have lower delays
+#Pattern doesn't hold for scheduled departure time:
+flights_dt %>%
+  mutate(minute = minute(sched_dep_time)) %>%
+  group_by(minute) %>%
+  summarize(
+    avg_delay = mean(arr_delay, na.rm = TRUE),
+    n = n()) %>%
+  ggplot(aes(minute, avg_delay)) +
+  geom_line()
+
+
+#16.3.2: Rounding components  ##############################################
+#We can round the date to a nearby unit of time by using
+  #floor_date()
+  #round_date()
+  #ceiling_date()
+#Each ceiling_date() function takes a vector of dates to adjust and the name of the unit to round down (floor), round up (ceiling),
+# or round to:
+flights_dt %>%
+  count(week = floor_date(dep_time, "week")) %>%
+  ggplot(aes(week, n)) +
+  geom_line()
+#This gives us the umber of flights per week
+
+#16.3.3: Setting components  ##############################################
+#We can set the components of date/time:
+(datetime <- ymd_hms("2016-07-08 12:34:56"))
+
+year(datetime) <- 2020
+datetime #change year to 2020
+
+month(datetime) <- 01
+datetime
+
+#Or, create a new date-time with update(), which allows us to set multiple values at once:
+update(datetime, year = 2020, month=2, mday=2, hour=2)
+
+#If values are too big, they will roll over:
+ymd("2015-02-01") %>%
+  update(mday=30)
+
+#You can use update() to show the distribution of flights across the course of the day for every day of the year:
+flights_dt %>%
+  mutate(dep_hour = update(dep_time, yday = 1)) %>%
+  ggplot(aes(dep_hour)) +
+  geom_freqpoly(binwidth = 300)
+
+#16.3.4: Exercises  ##############################################
+
+
+###############################################################
+#16.4: Time Spans  ##############################################
+#Here, we learn how arithmetic with dates works, ad learn about 3 classes of time spans:
+  #Durations represent an exact numer of soaps
+  #Periods represent human units like weeks and months
+  #Intervals represent starting and ending point
+
+#16.4.1: Durations  ##############################################
+#When we subtract to dates in R, we get a difftime object:
+
+#How old is Hadley?
+h_age <- today() - ymd(19791014)
+h_age
+
+#Since difftime records in a variety of measures (seconds, minutes, hours, days, or weeks)
+#lubridate provides duration as an alternative to difftime:
+as.duration(h_age)
+
+#Durations come with a number of convenient constructs:
+dseconds(15)
+dminutes(10)
+dhours(c(12, 24)) 
+ddays(0:5)
+dweeks(3)
+dyears(1)
+#Durations always record in seconds, and convert to larger units.
+
+#We can add, multiply, subtract and divide units:
+2 * dyears(1)
+dyears(1) + dweeks(12) + dhours(168)
+tomorrow <- today() + ddays(1)
+tomorrow
+last_year <- today() - dyears(1)
+last_year
+
+#16.4.2: Periods  ##############################################
+#lubridate provides periods to work with "human" times, like days and months - instead of seconds:
+seconds(15)
+minutes(10)
+hours(c(12,24))
+days(7)
+months(1:6)
+weeks(3)
+years(1)
+
+#We can add and multiply periods:
+10 * (months(6) + days(1))
+
+days(50) + hours(25) + minutes(2)
+
+#...and add them to dates:
+#Leap year
+ymd("2016-01-01") + dyears(1) #duration doesn't properly handle leap year
+ymd("2016-01-01") + years(1) #periods version handles the leap year and daylight savings time
+
+#Some of our flights (over 10,000) appear to have arrived before they departed - because they arrived on the next day:
+flights_dt %>%
+  filter(arr_time < dep_time)
+
+#We can fix this by adding days(1) to the arrival time of each flight:
+flights_dt <- flights_dt %>% 
+  mutate(
+    overnight = arr_time < dep_time,
+    arr_time = arr_time + days(overnight * 1),
+    sched_arr_time = sched_arr_time + days(overnight * 1)
+  )
+
+flights_dt %>% 
+  filter(overnight, arr_time < dep_time) 
+
+#16.4.3: Intervals  ##############################################
+#An interval is a duration with a starting point.
+next_year <- today() + years(1)
+next_year
+
+#To find out how many periods fall into an interval, use integer division:
+(today() %--% next_year) / ddays(1)
+
+#16.4.4: Summary  ##############################################
+#Rule of thumb: pick the simplest data structure possible
+#Use duration if you only care about physical time
+#use a period if you need to add a human time
+#If you need to figure out how long an interval is in human units, use an interval
+
+
+#16.4.5: Exercises  ##############################################
+
+
+
+###############################################################
+#16.5: Time Zones  ##############################################
+#R uses the international standard IANA time zones
+#These have a fairy consistent form of <continent>/<city>
+# http://www.iana.org/time-zones
+
+#You can find your current time zone via:
+Sys.timezone()
+#The complete list of time zones:
+OlsonNames()
+
+#The time xone is an attribute of date-time which only controls printing.  These represent the same instant in time:
+(x1 <- ymd_hms("2015-06-01 12:00:00", tz="America/New_York"))
+
+(x2 <- ymd_hms("2015-06-01 18:00:00", tz="Europe/Copenhagen"))
+
+x1 - x2
+
+x3 <- c(x1, x2)
+
+
+#Unless specified otherwise, lubridate always uses UTC (Coordinated Universal Time)
+
+#We can change the time zone 2 ways:
+  #Keep the instant the same, and change the display.  Use this when the instant is correct, but you want a more natural display:
+x3a <- with_tz(x3, tzone = "Australia/Lord_Howe")
+x3a
+
+
+  #Change the underlying instant in time (when you have an instant which has been labeled with the wrong time zone)
+x3b <- force_tz(x3, tzone = "Australia/Lord_Howe")
+x3b
+
+x3b-x3
+
+###############################################################
+#PART 3: PROGRAMMING
+###############################################################
+#Learning More:
+#Hands-on Programming with R, Garret Grolemund
+#Advanced R, Hadley Wickham  http://adv-r.had.co.nz
+
+###############################################################
+#18: Pipes with magrittr ##############################
+###############################################################
+#Pipes are a powerful tool for expressing a sequence of multiple operations
+#The pipe, %>%, comes from the magrittr package
+library(magrittr)
+
+
+###############################################################
+#17.2: Piping Alternatives ##############################
+#Little bunny Foo Foo
+#Went hopping though the forset
+#Scooping up the field mice
+#And bopping them on the head
+
+#Define an object to represent little bunny Foo Foo:
+foo_foo <- little_bunny()
+
+#Use a function for each key verb: hop(), scoop(), and bop().
+#With this object and these verb, we can tell the story at least 4 ways in code:
+  #Save each intermediate step as a new object
+  #Overwrite the original object many times
+  #Compose functions
+  #Use the pipe
+
+
+###############################################################
+#18.2.2: Intermediate Steps ##############################
+#The simplest appraoch is to save each step as a new object:
+foo_foo_1 <- hop(foo_foo, through = forest) 
+foo_foo_2 <- scoop(foo_foo_1, up = field mice)
+foo_foo_3 <- hop(bop, on = head)
+  
+#This methodology forces you to name each intermediate element.  This causes 2 problems:
+  #The code is cluttered with unimportant, intermediate names.
+  #You have too carefully increment the suffix on each line.
+
+#Let's take a look at an actual data manipulation pipeline where we add a new column to ggplot2::diamonds :
+#R shares columns across data frames, where possible (evidenced by the size of the 2 frames below) 
+diamonds <- ggplot2::diamonds
+
+diamonds2 <- diamonds %>%
+  dplyr::mutate(price_per_carat = price/carat)
+
+pryr::object_size(diamonds) #3.46MB
+pryr::object_size(diamonds2) #3.89MB
+pryr::object_size(diamonds, diamonds2) #3.89MB
+
+#How is this possible?  diamonds2 has 10 columns in common with diamonds; no need to duplicate that data.
+#The variables only get copied if we modify one of them:
+
+diamonds$aarat[1] <- NA
+
+pryr::object_size(diamonds) #3.46MB; the carat column has been modified and cannot be shared
+pryr::object_size(diamonds2) #3.89MB
+pryr::object_size(diamonds, diamonds2) #4.32MB
+
+
+###############################################################
+#18.2.2: Overwrite the Original ##############################
+#Instead of creating intermediate objects at each step, we could overwrite the original
+
+foo_foo <- hop(foo_foo, through = forest) 
+foo_foo <- scoop(foo_foo_1, up = field mice)
+foo_foo <- hop(bop, on = head)
+
+#There are two problems with this approach:
+  #1.) Debugging is painful; if you make a mistake, you need to run the complete pipeline from the beginning
+  #2.) The reptition of the object being transformed obscures what's changing on each line
+
+
+###############################################################
+#18.2.3: Function Composition ##############################
+#Another approach: abandon assignments, and just string the function calls together:
+bop(
+  scoop(
+    hop(foo_foo, through = forest),
+    up = field_mice
+  ),
+  on = head
+)
+#But here, we have to read from the inside-out, from right to left... It's very tough to read
+
+
+###############################################################
+#18.2.4: Use the Pipe %>% ##############################
+foo_foo %>%
+  hop(through = forest) %>%
+  scoop( up = field_mouse) %>%
+  bop (on = head)
+#This form focuses on verbs, not nouns.
+
+#The pipe works by performing a "lexical transformation": behind the scenes, magrittr reassembles the code in the pipe
+#to a form that works.  When we run a pipe like the above, magrittr does something like this:
+my_pipe <- function(.) {
+  . <- hop(., through = forest)
+  . <- scoop(., up = field_mice)
+  bop(., on = head)
+}
+my_pipe(foo_foo)
+
+#This means the pipe won't work for 2 classes of functions:
+  #1.) Functions which use the current environment.  For example, assign() will create a new variable with the given 
+  #name in the current environment:
+assign("x", 10)
+x
+
+"x" %>% assign(100)
+x
+  
+#assign() with the pipe doesn't work because it assigns it to a temp environment used by %>%.
+#If you want to use assign() with the pipe, you must be explicit about the environment:
+env <- environment()
+"x" %>% assign(100, envir = env)
+x
+#get() and load() have this same issue.
+
+
+  #2.) Functions which use lazy evaluation.  In R, function arguments are only computed when the function uses them,
+  #not prior to calling the function.  The pipe computes each element in turn, so we can't rely on this behavior:
+
+#This is a problem with tryCatch(), which let's you capture and handle errors:
+?tryCatch
+tryCatch(stop("!"), error = function(e) "An error")
+
+stop("!") %>%
+  tryCatch(error = function(e) "An error")
+
+#Other functions which have this behavior include: try(), suppressMessages(), and suppresssWarnings() in base R.
+
+
+###############################################################
+#18.3: When not to use the pipe ##############################
+#Pipes are great for writing a fairly short linear sequence of operations.
+#Consider reaching for another tool when:
+
+  #Your pipes are longer than 10 steps.  In this case, create intermediate objects with meaningful names, which makes
+  #debugging easier (you can more easily check intermediate results), and it makes your code easier to understand (the
+  #variable names can help communicate intent)
+
+  #You have multiple inputs or outputs.
+
+  #You are thinking about a directed graph with a complex dependency structure.  Pipes are linear, and complex
+  #relationships can result in confsing code.
+
+
+###############################################################
+#18.4: Other tools from magrittr ##############################
+#All packages in the tidyverse automatically make %>% available, so you don't normally load magrittr explicitly.
+#However, there are some other useful tools in magrittr we should try:
+
+#When working with complex pipes, it can be useful to call a function for its side-effects.
+#Maybe you want to print the current object, plot it, or save it to disk.  If a function doesn't return anything,
+#this terminates the pipe.
+
+#Use the "tee" pipe to work around this.  %T>% works like %>%, except it returns the left hand side instead of the 
+#right-hand side:
+
+rnorm(100)%>%
+  matrix(ncol = 2) %>%
+  plot() %>%
+  str()
+
+rnorm(100)%>%
+  matrix(ncol = 2) %T>%
+  plot() %>%
+  str()
+
+  #If working with functions which don't have a data frame based API (you pass them individual vectors rather than a
+  #data frame and expressions to be evaluated in the context of that frame), you might use %$%.
+
+  # %$% explodes out the variables in a data frame so we can refer to them explictly:
+
+mtcars %$%
+  cor(disp, mpg)
+
+###############################################################
+#19: Functions ################################################
+###############################################################
+#Writing a function has 3 big advantages over copy-paste:
+  #1.) You can name your function so your code is easier to understand
+  #2.) As requirements change, you can change one function, rsther than changing the code in many spots
+  #3.) You reduce the chance of making incidental mistakes, such as changing the a variable name in one place,
+  #and forgetting to change it everywhere.
+#Writing coe is a life-long journey... we can always improve.
+
+###############################################################
+#19.2: When Should You Write a Function #######################
+#You should consider writing a function whenever you've copied and pasted a block of code > 2x.
+#For example, look at this code:
+df <-  tibble::tibble(
+  a = rnorm(10),
+  b = rnorm(10),
+  c = rnorm(10),
+  d = rnorm(10)
+)
+
+?rnorm
+
+df$a <- (df$a -min(df$a, na.rm=TRUE))/
+  (max(df$a, na.rm=TRUE) - min(df$a, na.rm = TRUE))
+df$b <- (df$b -min(df$b, na.rm=TRUE))/
+  (max(df$b, na.rm=TRUE) - min(df$a, na.rm = TRUE))
+df$c <- (df$c -min(df$a, na.rm=TRUE))/
+  (max(df$c, na.rm=TRUE) - min(df$c, na.rm = TRUE))
+df$d <- (df$d -min(df$d, na.rm=TRUE))/
+  (max(df$d, na.rm=TRUE) - min(df$d, na.rm = TRUE))
+
+#This code rescales each column from 0 to 1.  But there's a mistake in the second df$b code.
+#Extracting repeated code prevents this type fo mistake.
+
+#To write a function, first analayze the code.  How many inputs does it have? 
+df$a <- (df$a -min(df$a, na.rm=TRUE))/
+  (max(df$a, na.rm=TRUE) - min(df$a, na.rm = TRUE))
+#This code only has one input: df$a.  
+
+#To make the inputs more clear, re-write using temporary variables with general names:
+x <- df$a
+(x - min(x, na.rm = TRUE))/
+  (max(x, na.rm=TRUE) - min(x, na.rm = TRUE))
+
+#There's some duplication in the code.  We compute the range 3 times, but it makes sense to do it in one step:
+?range #returns a vector containing the min and max of all the given arguments.
+rng <- range(x, na.rm = TRUE)
+(x-rng[1])/(rng[2]-rng[1])
+
+#Pulling out intermediate calcs into a named variable makes more clear what the code is doing.
+
+#Now we turn it into a function:
+rescale01 <- function(x) {
+  rng <- range(x, na.rm = TRUE)
+  (x-rng[1])/(rng[2]-rng[1])
+}
+rescale01(c(0,5,10)) #This rescales these 3 numbers 
+
+#There are 3 key steps in creating a function:
+  #1.) Pick a name for the fuction.  Here, we used rescale01 because then fnctn scales from 0 to 1
+  #2.) List the inputs, or arguments, to the function inside function(). Here, we have just one input, x.  
+  #3.) Place the code you develop in the body of the function, a {} block which follow function(). 
+
+#It's easier to start with working code and then turn it into a function than to just attempt writing a fnctn.
+#It's also smart to check your function with a few different inputs:
+rescale01(c(-10,0,10)) 
+rescale01(c(1,2,3,NA,5)) #This rescales these 3 numbers 
+
+####As you write more functions, you'll want to convert this informal type of test into formal, automated testing.
+####Learn more about this at http://r-pkgs.had.nz.tests.html
+
+#Now we can simplify the original example:
+df$a <- rescale01(df$a)
+df$b <- rescale01(df$b)
+df$c <- rescale01(df$c)
+df$d <- rescale01(df$d)
+#We'll learn more about how to further reduce this duplication in Chapter 21, Iteration with purrr
+
+#Another advantage: if our requirements change, we only need to change the code in one place.
+#Let's say we discover one of our variables contains an infinite value.  rescale01 will fail:
+x <- c(1:10, Inf)
+rescale01(x)
+
+#We only have to alter the code in one spot:
+?range
+rescale01 <- function(x) {
+  rng <- range(x, na.rm = TRUE, finite=TRUE) #indicates all non-finite values s/b eliminated
+  (x-rng[1])/(rng[2]-rng[1])
+}
+
+rescale01(x)
+
+
+###############################################################
+#19.2.1: Exercises ############################################
+
+
+###############################################################
+#19.3: Functions Are for Humans and Computers #################
+#Some things you shoud bear in mind when writing funtions:
+
+#The name of the funtion is important; it should be short and descriptive.
+#Function names s/b verbs, and arguments s/b nouns.
+
+#If you have a family of functions, make sure the names of the functions and arguments are consistent
+#Good:
+input_select()
+input_checkbox()
+input_text()
+
+#Not Good:
+select_input()
+checkbox_input()
+text_input()
+
+#Use plenty of comments to explain your code.
+
+#USE this when breaking code into chunks ============================
+#or use this --------------------------------------------------------
+#Ctrl + Shift + R can create these headers:
+# Section Label Example  --------------------------------------------------
+
+
+###############################################################
+#19.3.1: Exercises ##################################
+#1.) Read the source code for each of the following three functions, puzzle out what they do, 
+#and then brainstorm better names.
+
+f1 <- function(string, prefix) {
+  substr(string, 1, nchar(prefix)) == prefix
+}#returns whether a function has a common prefix.  A better name fould be "has_prefix()"
+
+f1(c("str_c", "str_a"), "str_")
+
+f2 <- function(x) {
+  if (length(x) <= 1) return(NULL)
+  x[-length(x)]
+}#This function drops the last element. "drop_last()" is a better name.
+f2(1:3)
+
+f3 <- function(x, y) {
+  rep(y, length.out = length(x))
+}#repeats y once for each member of x.  "recycle" might be a good name.
+f3(1:3,4)
+
+
+#2.) Take a function that you???ve written recently and spend 5 minutes brainstorming a better name 
+#for it and its arguments.
+
+#3.) Compare and contrast rnorm() and MASS::mvrnorm(). How could you make them more consistent?
+
+rnorm?
+
+#4.) Make a case for why norm_r(), norm_d() etc would be better than rnorm(), dnorm(). 
+#Make a case for the opposite.
+
+
+###############################################################
+#19.4: Conditional Execution ##################################
+#An if statement allows us to conditionally execute code:
+if(condition) {
+  #code executed when condition is TRUE
+} else {
+  #code executed when condition is FALSE
+}
+
+
+#An example which returns a logical vector describing whether each element of a vector is named:
+has_name <- function(x) {
+  nms <- names(x)
+  if (is.null(nms)) {
+    rep(FALSE, length(x))
+  } else {
+    !is.na(nms) & nms !=""
+  }
+}
+
+###############################################################
+#19.4.1: Conditions ##################################
+
+#The condition must evaluate to either TRUE or FALSE.
+#If it's a vector, we'll get a warning message, if NA, we'll get an error.
+if(c(TRUE, FALSE)) {}
+
+if(NA) {}
+
+#Use || (or) and && (and) to combine multiple logic operations.
+#These operators are "short-circuiting": as soon as || sees the first TRUE, it stops evaluating.
+#As soon as && sees a FALSE, it stops.
+
+#Never use | or & in an if statement: these are vectorized operations which apply to multiple values.
+
+#Be careful when testing for equality, as == is also vectorized, which means we can get more than one output.
+#Either check the length is already 1, collapse with all() or any(), or use the non-vectorized identical().
+identical(0L, 0) #identical() is very strict, and doesn't coerce types
+
+#Be wary of floating point numbers:
+x <- sqrt(2)^2
+x
+
+x == 2
+
+x-2
+
+#Use dplyr::near() for comparisons instead, as describes in chapter 5, "comparisons".
+
+#Remember, x==NA doesn't do anything useful.
+
+
+###############################################################
+#19.4.2: Multiple Conditions ##################################
+#We can chain multiple if statements together:
+If(this) {
+  #do that
+} else if (that) {
+  #do something else
+} else {
+  #
+}
+
+#If you have a very long set of chained "if" statements, consider re-writing the code.  The switch()
+#Function allows you to evaluate selected code based on postion or name:
+function(x,y,op) {
+  switch(op,
+         plus = x + y, 
+         minus = x - y,
+         times = x * y,
+         divide = x / y,
+         stop("Unknown op!")
+         )
+}
+
+#cut() is used to discretize continuous variables, and can also eliminate long chains of if() statements.
+
+
+###############################################################
+#19.4.3: Code Style ##################################
+#Both "if" and "function" should almost always be followed by squiggly brackets {}, and the contents s/b indented
+#by two spaces.  This makes it easier to see the hierarchy in the code by skimming the left-hand margin.
+
+#An opening curly brace should never be on its own line, and should always be followed by  new line.
+#A closing curly brace should always go on its own line unless followed by "else".
+#Always indent the code inside curly braces
+
+#Good
+if (y<0 && debug) {
+  message("Y is negative")
+}
+
+if (y==0) {
+  log(x)
+} else {
+  y^x
+}
+
+#Bad
+if (y < 0 && debug)
+  message("Y is negative")
+
+if(y==0) {
+  log(x)
+}
+else {
+  y^x
+}
+
+#But it's okay to drop the curly braces if you have a very short "if" statement which can fit on 1 line:
+y <- 10
+x <- if(y<20) "Too low" else "Too high"
+x
+
+#But only for very brief "if" statements; otherwise the full form is easier to read:
+if(y<20) {
+  x <- "Too low"
+} else {
+  x <- "Too high"
+}
+
+x
+
+
+
+###############################################################
+#19.4.4: Exercises ##################################
+#1.) What???s the difference between if and ifelse()? Carefully read the help and construct three examples that illustrate the key differences.
+
+#2.) Write a greeting function that says ???good morning???, ???good afternoon???, or ???good evening???, depending on the time of day. (Hint: use a time argument that defaults to lubridate::now(). That will make it easier to test your function.)
+
+#3.) Implement a fizzbuzz function. It takes a single number as input. If the number is divisible by three, it returns ???fizz???. If it???s divisible by five it returns ???buzz???. If it???s divisible by three and five, it returns ???fizzbuzz???. Otherwise, it returns the number. Make sure you first write working code before you create the function.
+
+#4.) How could you use cut() to simplify this set of nested if-else statements?
+
+if (temp <= 0) {
+  "freezing"
+} else if (temp <= 10) {
+  "cold"
+} else if (temp <= 20) {
+  "cool"
+} else if (temp <= 30) {
+  "warm"
+} else {
+  "hot"
+}
+
+#How would you change the call to cut() if I???d used < instead of <=? What is the other chief advantage of cut() for this problem? (Hint: what happens if you have many values in temp?)
+
+#5.) What happens if you use switch() with numeric values?
+
+#6.) What does this switch() call do? What happens if x is ???e????
+
+switch(x, 
+       a = ,
+       b = "ab",
+       c = ,
+       d = "cd"
+)
+#Experiment, then carefully read the documentation.
+
+
+###############################################################
+#19.5: Function Arguments #####################################
+#The arguments to a function typically fall into 2 braod sets:
+#1 supplies the data to compute on, the 2nd supplies arguments which contr the details of the function.
+
+#For example:
+#In log(), the data is x, and the detail is the base of the algorithm
+?log
+log()
+
+#In mean(), the data is x, and the detail is how much to trim from the ends (trim) and how to handle missing values (na.rm) 
+?mean
+x <- c(0:10, 50)
+xm <- mean(x)
+xm
+c(xm, mean(x, trim = 0.2)) 
+
+#In t.test(),the data are x and y, and the details of the test are alternative, mu, paired, var.equal and conf.level.
+?t.test
+
+#In str_(), we can supply any number of strings, and details ar controlled by sep and collapse
+?str_c
+
+#Data arguments geneally come first, and detail arguments at the end.  Detail arguments usually have default values.
+#We can specify a default value the same way we call a fnctn with a named argument:
+
+#Compute confidence interval around mean using normal approximation:
+mean_ci <- function(x, conf = 0.95) {
+  se <- sd(x)/sqrt(length(x))
+  alpha <- 1- conf
+  mean(x) + se * qnorm(c(alpha / 2, 1 - alpha /2))
+}
+
+x <- runif(100)
+mean_ci(x)
+mean_ci(x,conf = 0.99)
+
+#When calling a function, we typically omit the data argument names - but if we override the default value, 
+#we should use the full name:
+
+#Good:
+mean(1:10, na.rm=TRUE)
+
+#Bad:
+mean(1:10,,FALSE)
+?mean
+
+#Always place a space around = in function calls, and always put spaces after commas.
+
+###############################################################
+#19.5.1: Choosing Names #####################################
+#Longer, more descriptive names are typically better, but there some common short names:
+  #x, y, z :vectors
+  #w: a vector of weights
+  #df: a data frame
+  #i , j : numeric indices
+  #n :length, or number of rows
+  #p : number of columns
+
+
+###############################################################
+#19.5.2: Checking Values #####################################
+#It's easy to call your function with invalid inputs.  To avoid this, it's useful to make constraints explicit.
+#For example, imagine we've written a function for weighted summary statistics:
+wt_mean <- function(x, w) {
+  sum(x * w) / sum(x)
+}
+wt_var <- function(x, w) {
+  mu <- wt_mean(x, w)
+  sum(w * (x - mu) ^ 2) / sum(w)
+}
+wt_sd <- function(x, w) {
+  sqrt(wt_var(x, w))
+}
+
+#What happens if x and w aren't the same length?
+wt_mean(1:6, 1:3)
+#Because R recylces vectors, we don't get an error.
+
+#It's good to chrck important preconditions and throw an error with stop() if they aren't TRUE:
+wt_mean <- function(x, w) {
+  if (length(x) != length(w)) {
+    stop("'x' and 'w' must be the same length", call. = FALSE)
+  }
+    sum(x * w) / sum(x)
+}
+
+#Now what happens if x and w aren't the same length?
+wt_mean(1:6, 1:3)
+
+#Another useful check is the built-in stopifnot() function: It checks that each 
+#argument is true and if not, produces a generic error message:
+
+wt_mean <- function(x, w, na.rm = FALSE) {
+  stopifnot(is.logical(na.rm), length(na.rm) == 1)
+  stopifnot(length(x) == length(w))
+  
+  if(na.rm) {
+    miss <- is.na(x) | in.na(w)
+    x <- x[!miss]
+    w <- w[!miss]
+  }
+  sum(x * w) / sum(x)
+}
+
+wt_mean(1:6, 6:1, na.rm = "foo")
+
+
+###############################################################
+#19.5.3: Dot-dot-dot(...) #####################################
+#Many functions in R take an arbitrary number of inputs:
+sum(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+
+stringr::str_c("a", "b", "c", "d", "e", "f")
+
+#These functions rely on a special argument: ... (pronounced dot-dot-dot)
+#This argument captures any number of arguments which aren't otherwise matched.
+#We can then send those ... onto another function- a useful catch-all if your function wraps another function.
+
+#For example, here are some helper functions that wrap around str_c:
+commas <- function(...) stringr::str_c(..., collapse = ", ")
+commas(letters[1:10])
+
+rule <- function(..., pad = "-") {
+  title <- paste0(...)
+  width <- getOption("width") - nchar(title) - 5
+  cat(title, " ", stringr::str_dup(pad, width), "\n", sep = "")
+}
+
+rule("Important Output")
+#Here, ... lets me dealforward on any arguments that i don't want to deal with to str_c().
+#However, any mispelled arguments will not raise arrors, so typos can go unnoticed:
+x <- c(1,2)
+sum(x, na.mr = TRUE)
+
+
+###############################################################
+#19.5.4: Lazy Evalaution #####################################
+#Arguments in R are lazily evaluated: they're not computed until needed.
+#If they're never used, they're never called.
+#Read more about lazy evaluation in: http://adv-r.had.co.nz/Functions.html#lazy-evaluation
+
+
+###############################################################
+#19.5.5: Exercises #####################################
+#1.) What does commas(letters, collapse = "-") do? Why?
+
+#2.) It???d be nice if you could supply multiple characters to the pad argument, e.g. 
+#rule("Title", pad = "-+"). Why doesn???t this currently work? How could you fix it?
+
+#3.) What does the trim argument to mean() do? When might you use it?
+
+#4.) The default value for the method argument to cor() is c("pearson", "kendall", "spearman").
+#What does that mean? What value is used by default?
+
+
+###############################################################
+#19.6: Return Values ##########################################
+#Two thigs you should consider when returning a value:
+  #1. Does returning make your function easier to read?
+  #2. Can you make your function pipeable?
+
+
+#19.6.1: Explicit Return Statements ##########################################
+#The value returned by  function is usually the last statement it evaluates, but we can return early via return().
+#It's best to save the use of return() to signal you can return early with a simpler solution - for example, if inputs are empty.
+
+complicated_function <- function(x, y, z) {
+  if(length(x) == 0 || length(y) == 0) {
+    return(0)
+  }
+  
+  #complicated code here
+}
+
+#Another reason would be when we have one complex and one simple block.  Instead of:
+f <- function() {
+  if(x) {
+    #Do
+    #something
+    #which 
+    #takes
+    #many
+    #lines
+    #to
+    #express
+  } else {
+    #return something short
+  }
+}
+
+#write this way instead:
+f <- function() {
+  if(!x) {
+    return(something_short)
+  }
+  #Do
+  #something
+  #which 
+  #takes
+  #many
+  #lines
+  #to
+  #express
+}
+
+
+#19.6.2: Writing Pipeable Functions ##########################################
+#Thinking about the return value is important if you want to write your own pipeable functions.
+#Two main types of pipeable functions:
+
+  #Transformations- a clear primary object is passed in as the first argument, and a modified version is 
+  #returned by the function.  
+
+  #Side-effects- the passed object is not transformed.  Instead, the function performs an action on the object,
+  #such as drawing a plot or saving a file:
+
+show_missings <- function(df) {
+  n <- sum(is.na(df))
+  cat("Missing values: ", n, sep = "")
+  
+  invisible(df)
+}
+
+#If we call this interactively, invisible() means the input df doesn't get printed:
+show_missings(mtcars)
+
+#It's still there, it's just not printed by default:
+x <- show_missings(mtcars)
+class(x)
+dim(x)
+
+#And we can still use in a pipe:
+mtcars %>%
+  show_missings() %>%
+  mutate(mpg = ifelse(mpg < 20, NA, mpg)) %>%
+  show_missings()
+
+
+###############################################################
+#19.7: Environment ############################################
+#The last compnent of a function is its environment, which can be crucial to how functions work.
+#The environment controls how R finds the value associated with a name.  For example:
+f <- function(x) {
+  x + y
+}
+#In many programming languages, this would be an error: y is not defined in the function.
+#R uses lexical scoping to find the value associated with a name.  R will look in the 
+#environment where the function was defined:
+
+y <- 100
+f(10)
+
+y <- 1000
+f(10)
+
+#The advantage is this allows R to be very consistent.  Every name is looked up using the same set of rules.
+#For f(), this includes the behavior of { and +.  This allows us to do some interesting things:
+'+' <- function(x, y) {
+  if (runif(1) < 0.1) {
+    sum(x,y)
+  } else {
+    sum(x, y) * 1.1
+  }
+}
+table(replicate(1000, 1 + 2))
+?replicate
+
+###############################################################
+#20: Vectors ##################################################
+###############################################################
+#Most functions will work with vectors.  
+#Hadley si working on tools to allow functions which work with tibbles. See  https://github.com/hadley/lazyeval.
+
+#We'll use a handful of functions from purrr package to avoid incinsistencies in base R:
+library(purrr)
+
+
+#20.2: Vector Basics ##########################################
+#There are two type of vectors:
+  #Atomic vectors, of which there are 6 types: logical & integer (known as numeric vectors), double, character, complex, and raw.
+
+  #Lists, which are also called recursive vectors, since lists can contain other lists.
+
+#The major difference between atomic and lists is that atomic vectors are homogenous, while lists can be heterogenous.
+
+#NULL is often used to represent the absence of a vector (as opposed to NA, the absence of a value in a vector).
+
+#Every vector has 2 key properties:
+#1.) Its type, which we can determine with typeof():
+typeof(letters)
+typeof(1:10)
+
+
+
+#20.3: Important Tyoes of Atomic Vectors ######################
+
+
+
+#20.4: Using Atomic Vectors ###################################
+
+
+
+#20.5: Recursive Vectors ######################################
+
+
+
+#20.6: Attributes #############################################
+
+
+
+#20.7: Augmented Vectors ######################################
+
+
+
+###############################################################
+#21: Iterations with purrr ####################################
+###############################################################
+
+
+
+
+
+
+
+
+
+
+
 
 
 
