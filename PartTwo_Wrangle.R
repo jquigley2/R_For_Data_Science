@@ -3081,7 +3081,7 @@ table(replicate(1000, 1 + 2))
 #Most functions will work with vectors.  
 #Hadley si working on tools to allow functions which work with tibbles. See  https://github.com/hadley/lazyeval.
 
-#We'll use a handful of functions from purrr package to avoid incinsistencies in base R:
+#We'll use a handful of functions from purrr package to avoid inconsistencies in base R:
 library(purrr)
 
 
@@ -3100,14 +3100,135 @@ library(purrr)
 typeof(letters)
 typeof(1:10)
 
+#2.) Its length, which we can determine with length():
+x <- list("a", "b", 1:10)
+length(x)
+
+#Vectors can also contain additional metadata in the form of attributes, which are used to create augmented vectors.
+#Four important types of augmented vectors:
+
+  #Factors are built on top of integer values
+  #Dates and date-times are built on top of numeric vectors
+  #Data frames and tibbles are built on top of lists
+
+#20.3: Important Types of Atomic Vectors ######################
+
+#20.3.1: Logical ######################################
+#The simplest type of atomic vector, because they take one of three values: FALSE, TRUE, or NA.
+#Can be created by comparison operators (see 5.2.1) or c():
+1:10 %% 3 == 0
+
+c(TRUE, TRUE, FALSE, NA)
 
 
-#20.3: Important Tyoes of Atomic Vectors ######################
+#20.3.2: Numeric ######################################
+#Integer and double values are known collectively as numeric vectors.
+#In R, numbers are double by default.  To make an integer, place an L after the number:
+typeof(1)
+typeof(1L)
+1.5L
+
+#There are 2 important distinctions between integers and doubles:
+#1.) Doubles are approximations; they represent floating point numbers which cannot always be precisely represented 
+#with a fixed amount of memory.  For example, what is the square of the square root of 2?
+x <- sqrt(2) ^ 2
+x
+x-2
+#Instead of comparing floating point numbers using ==, we should use dplyr::near(), which allows for a bit of tolerance.
+
+#2.) Integers have one special value: NA, while doubles have four: NA, NaN, Inf, and -Inf. The latter 3 can arise during division:
+c(-1, 0, 1) / 0
+
+#Avoid using == to check for these special values.  Instead, use the helper functions is.infinite(),  is.finite(), and is.nan().
+
+
+#20.3.3: Character ######################################
+#These are the most complex type of atomic vector, because each element of a character vector is a string, 
+#and a string can contain an arbitrary amount of data. 
+
+#R uses a global string pool, meaning each unique string is only stored in memory once, and every use of 
+#the string points to that representation.  This reduces the amount of memory needed. 
+
+#We can see this with pryr::object_size():
+x <- "This is a reasonably long string."
+pryr::object_size(x)
+
+y <- rep(x, 1000)
+pryr::object_size(y)
+#y isn't 1000x as big as x, because each instance is a pointer to x, and a pointer is only 8 bytes.
+
+
+#20.3.4: Missing Values ######################################
+#Each type of atomic vector has its own missing value:
+NA
+NA_integer_
+NA_real_
+NA_character_
+#R will auto-convert NA, but this is good to know as some functions are very strict.
+
+
+#20.3.5: Exercises ######################################
+#1.) Desribe the difference between is.finite(x) and !is.infinite(x)
+
+#2.) Read the source code for dplyr::near().  (Hint: to see the source code, drop the ()) How does it work?
+
+#3.) A logical vector can take 3 values.  How many possible values can an integer value take?  
+
+#A double?
+
+#4.)  Brainstorm at least 4 functions which allow you to convert a double to an integer.  How do they differ?
+
+#5.) What functions from readr allow you to turn a string into a logical, integer and a double value?
 
 
 
 #20.4: Using Atomic Vectors ###################################
+#Some important tools for working with atomic vectors include:
+  #1.) how to convert from one type to another, and when that happens automatically
+  #2.) how to tell if an object is a certain kind of vector
+  #3.) what happens when we work with vectors of different lengths
+  #4.) how to name the elements of a vector
+  #5.) How to pull out elements of interest
 
+
+#20.4.1: Coercion ###################################
+#Two ways to convert - or coerce - one type of vector to another:
+
+  #1.) Explicit coercion happens when you call a function such as as.logical(), as.integer(), as.double(), or as.character().
+  #If possible, fix this further upstream; for example, tweak your readr "col_types" specification.
+
+  #2.) Implicit coercion happens when you use a vector in a specific context which expects a certain type of vector.  For 
+  #example, when you use a logial vector with numeric summary function, or use a double vector where an integer vector is expected.
+
+#The sum of a logical vector is the number of TRUEs, and the men is the proportion of TRUEs:
+x <- sample(20, 100, replace = TRUE)
+?sample
+y <- x >10
+sum(y) #How many are > 10?
+mean(y) #What proportion are > 10?
+
+#When you create a vector with multiple types with c(), the most complex type wins:
+typeof(c(TRUE, 1L))
+typeof(c(1L, 1.5))
+typeof(c(1.5, "a"))
+#An atomic vector cannot have multiple types; if you need multiple types, use a list.
+
+
+#20.4.2: Test Functions ###################################
+
+
+
+
+#20.4.3: Scalars and recycling rules ###################################
+
+
+#20.4.4: Naming vectors ###################################
+
+
+#20.4.5: Subsetting ###################################
+
+
+#20.4.6: Exercises ###################################
 
 
 #20.5: Recursive Vectors ######################################
