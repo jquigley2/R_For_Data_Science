@@ -3278,8 +3278,8 @@ tibble(x = 1:4, y = rep(1:2, each=2)) #repeats each element twice in a row
 c(x = 1, y = 2, z= 4)
 
 #...or after the fact with purrr::set_names()
-purrr::set_names()
-  
+purrr::set_names(1:3, c("a", "b", "c"))
+
 
 #20.4.5: Subsetting ###################################
 #We used dplyr::filter() to filter rows in a tibble; but filter() only works with tibbles.
@@ -3423,15 +3423,25 @@ attr(x, "farewell") <- "Bye!"
 attributes(x)
 x
 
-  #There are 3 important attributes used to implement fundamental parts of R:
+#There are 3 important attributes used to implement fundamental parts of R:
 
-    #Names are used to name the elements of a vector
-    #Dimensions (or 'dims') make a vector behave like a matrix or an array
-    #Class is used to implement the S3 object-oriented system
+  #Names are used to name the elements of a vector
+  #Dimensions (or 'dims') make a vector behave like a matrix or an array
+  #Class is used to implement the S3 object-oriented system
       #A detailed discussion of object-oriented programming is found here: http://bit.ly/OOproadvR
 
-  #A typical generic function:
+#A typical generic function:
   as.Date
+#The call to "UseMethod" means this is a generic fiunction, and will call a specific method -
+# a function - based on the class of the first argument.
+  
+#We can list all the methods for a generic with methods():
+methods("as.Date")  
+
+#For example, if x is a character vector, as.Date() will call as.Date.character().
+#If x is a factor, it'll call as.Data.factor().
+
+#The most important S3 generic is print(), which controls how an object is printed when we type its name into the console.
 
 
 #20.7: Augmented Vectors ######################################
@@ -3442,15 +3452,45 @@ x
   #Four important augmented vectors: Factors, Date-times and times, and Tibbles
   
 #20.7.1: Factors ######################################
+#Factors are designed to represent categorical data.
+#These are built on top of integers, and have a levels attribute:
 
+x <- factor(c("ab", "cd", "ab"), levels = c("ab", "cd", "ef"))
+typeof(x)
+attributes(x)
+x
 
 #20.7.2: Dates and Date-times ######################################
+#Dates in R are numeric vectors that represent the number of days since January 1, 1970:
+x <- as.Date("1971-01-01")
+unclass(x)
+typeof(x)
+attributes(x)
 
+#Date-times are numeric vectors with the class POSIXct that represent the number of seconds since January 1, 1970:
+x <- lubridate::ymd_hm("1970-01-01 01:00")
+unclass(x)
+typeof(x)
+attributes(x)
+
+#tzone attribute is optional; it shows how the time is printed:
+attr(x, "tzone") <-  "US/Pacific"
+x
+
+#another type of date-time is called POSIXlt.  These are built on top of named lists:
+y <- as.POSIXlt(x)
+typeof(y)
+attributes(y)
 
 #20.7.3: Tibbles ######################################
 
 
+
+
 #20.7.4: Exercises ######################################
+
+
+
 
 
 ###############################################################
