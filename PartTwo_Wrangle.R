@@ -3079,17 +3079,21 @@ table(replicate(1000, 1 + 2))
 #20: Vectors ##################################################
 ###############################################################
 #Most functions will work with vectors.  
-#Hadley si working on tools to allow functions which work with tibbles. See  https://github.com/hadley/lazyeval.
+#Hadley is working on tools to allow functions which work with tibbles. See  https://github.com/hadley/lazyeval.
 
 #We'll use a handful of functions from purrr package to avoid inconsistencies in base R:
 library(purrr)
 
-
 #20.2: Vector Basics ##########################################
 #There are two type of vectors:
-  #Atomic vectors, of which there are 6 types: logical & integer (known as numeric vectors), double, character, complex, and raw.
-
-  #Lists, which are also called recursive vectors, since lists can contain other lists.
+  #1 Atomic vectors, of which there are 6 types: 
+    #a logical 
+    #b integer (also known as numeric vector) 
+    #c double  (also known as numeric vector)
+    #d character 
+    #e complex   (rarely used) 
+    #f raw       (rarely used)
+  #2 Lists, which are also called recursive vectors, since lists can contain other lists.
 
 #The major difference between atomic and lists is that atomic vectors are homogenous, while lists can be heterogenous.
 
@@ -3102,6 +3106,7 @@ typeof(1:10)
 
 #2.) Its length, which we can determine with length():
 x <- list("a", "b", 1:10)
+x
 length(x)
 
 #Vectors can also contain additional metadata in the form of attributes, which are used to create augmented vectors.
@@ -3156,30 +3161,40 @@ pryr::object_size(x)
 y <- rep(x, 1000)
 pryr::object_size(y)
 #y isn't 1000x as big as x, because each instance is a pointer to x, and a pointer is only 8 bytes.
-
+#(8 * 1000) + 152 = 8.14kB 
 
 #20.3.4: Missing Values ######################################
 #Each type of atomic vector has its own missing value:
-NA
-NA_integer_
-NA_real_
-NA_character_
+NA #logical
+NA_integer_ #integer
+NA_real_ #double
+NA_character_ #character
 #R will auto-convert NA, but this is good to know as some functions are very strict.
 
 
 #20.3.5: Exercises ######################################
 #1.) Desribe the difference between is.finite(x) and !is.infinite(x)
+x <- c(1,2,3,Inf, NaN, -Inf)
+
+is.finite(x)
+!is.finite(x)
 
 #2.) Read the source code for dplyr::near().  (Hint: to see the source code, drop the ()) How does it work?
+dplyr::near
+
+.Machine$double.eps
+#Rather than checking for x=y, the function checks whether x is within the square root of .Machine$double - the smallest floating number.
 
 #3.) A logical vector can take 3 values.  How many possible values can an integer value take?  
 
 #A double?
 
-#4.)  Brainstorm at least 4 functions which allow you to convert a double to an integer.  How do they differ?
+
+#4.)Brainstorm at least 4 functions which allow you to convert a double to an integer.  How do they differ?
+
 
 #5.) What functions from readr allow you to turn a string into a logical, integer and a double value?
-
+#The functions parse_logical, parse_integer, and parse_number
 
 
 #20.4: Using Atomic Vectors ###################################
@@ -3200,10 +3215,14 @@ NA_character_
   #2.) Implicit coercion happens when you use a vector in a specific context which expects a certain type of vector.  For 
   #example, when you use a logial vector with numeric summary function, or use a double vector where an integer vector is expected.
 
-#The sum of a logical vector is the number of TRUEs, and the men is the proportion of TRUEs:
-x <- sample(20, 100, replace = TRUE)
+#The sum of a logical vector is the number of TRUEs, and the mean is the proportion of TRUEs:
 ?sample
-y <- x >10
+
+x <- sample(20, 100, replace = TRUE)
+
+x
+
+y <- x > 10
 sum(y) #How many are > 10?
 mean(y) #What proportion are > 10?
 
@@ -3215,32 +3234,223 @@ typeof(c(1.5, "a"))
 
 
 #20.4.2: Test Functions ###################################
-
-
-
+#You may want to do different things depending on the type of vector.  The is_* function provided by purrr are helpful:
+is.logical(x)
+is.integer(x)
+is.double(x)
+is.numeric(x)
+is.character(x)
+is.atomic(x)
+is.list(x)
+is.vector(x)
+#Each of these also comes in a scalar version, such as is_scalar_atomic(), which checks the length is 1.
+is.scalar.atomic(x)
 
 #20.4.3: Scalars and recycling rules ###################################
+#R implicitly coerces the length of vectors.  This is called vector recycling - the shorter 
+#vector is repeated to match the longer vector.
 
+#This is most useful when mixing vectors and scalars (single numbers where vector length = 1)
+?sample
+sample(20) + 100 #100 has a vector length 1 and is recycled
+?runif
+runif(10) > 0.5 #0.5 is recycled in the function
+
+#In R, basic mathematical operators work with vectors.  You should never need to perform explicit iteration
+#when performing simple mathematical computations.
+
+#What happens if you add 2 vectors of different lengths?
+1:10 + 1:2
+#R expands the shortest vector to the same length as the longest by recycling.  This is silent
+#except when the length of the longer is not an integer multiple of the shorter:
+1:10 + 1:3
+
+#Since this can silently conceal problems, vectorized functions in the tidyverse will throw errors.
+#If you want to recycle, you must do this via rep():
+tibble(x = 1:4, y = 1:2) #throws an error
+
+tibble(x = 1:4, y = rep(1:2, 2)) #repeats y twice
+
+tibble(x = 1:4, y = rep(1:2, each=2)) #repeats each element twice in a row
 
 #20.4.4: Naming vectors ###################################
+#All types of vectors can be named during creation with c():
+c(x = 1, y = 2, z= 4)
 
+#...or after the fact with purrr::set_names()
+purrr::set_names()
+  
 
 #20.4.5: Subsetting ###################################
+#We used dplyr::filter() to filter rows in a tibble; but filter() only works with tibbles.
 
+#For vectors, [] is the subsetting function, and is called like x[a]. 
 
-#20.4.6: Exercises ###################################
+#There are 4 types of things we can subset a vector with:
+  #1.) A numeric vector containing only integers.  
+  #These integers must be all positive, negative, or zero.
+  
+  #Subsetting with positive vectors keeps the elements at those positions:
+x <- c("one", "two", "three", "four", "five")
+x[c(3,2,5)]
 
+  #By repeating a position, you can make a longer output than the input:
+x[c(1,1,5,5,5,2)]
+
+  #Subsetting with negative integers drops the elements at those positions:
+x <- c("one", "two", "three", "four", "five")
+x[c(-2,-3,-5)]
+
+  #DO NOT mix negative and positive integers.
+
+  #2.) Subsetting with a logical vector keeps all values corresponding to TRUE:
+x <- c(10,3,NA, 5,8,1,NA)
+
+  #Retrieve all non-missing values from x:
+x[!is.na(x)]
+
+  #All even or missing values of x:
+x[x %% 2 ==0]
+
+  #3.) If you have a named vector, can subset it with a character vector:  
+x <- c(abc=1, def=2,efg=3)
+x
+x[c("def", "efg")]
+
+  #Can also use a character vector to duplicate individual entries:
+x[c("efg", "efg")]
+
+  #4.) The simplest type of subsetting is nothing, x[], which returns the complete x.
+  #This is useful when retrieving only certain rows OR columns.
+
+  #If x is 2d, then x[1,] retrieves the first row and all columns.
+  # x[,1] retrieves only the first column.
+  # x[,-1] will retrieve all except the first column.
+
+#For more about subsetting, refer to the "Subsetting" chapter of Advanced R (http://bit.ly/subsetadvR)
+
+#20.4.6: Exercises ######################################
+
+#1.) What does mean(is.na(x)) tell you about a vector x? What about sum(!is.finite(x))?
+  
+mean(is.na(x)) #Tells us what % of entries are N/A
+sum(!is.finite(x)) #Tells us how many NA entries we have.
+
+#2.)Carefully read the documentation of is.vector(). What does it actually test for? 
+  #Why does is.atomic() not agree with the definition of atomic vectors above?
+?is.vector
+is.vector(x)
+
+#3.) Compare and contrast setNames() with purrr::set_names().
+
+#4.) Create functions that take a vector as input and returns:
+  
+  #a.) The last value. Should you use [ or [[?
+                                          
+  #b.) The elements at even numbered positions.
+                                        
+  #c.) Every element except the last value.
+                                        
+  #d.) Only even numbers (and no missing values).
+                                        
+  #e.) Why is x[-which(x > 0)] not the same as x[x <= 0]?
+                                          
+#5.) What happens when you subset with a positive integer that???s bigger than the length of the vector? 
+  #What happens when you subset with a name that doesn???t exist?
+                                          
 
 #20.5: Recursive Vectors ######################################
+#Lists are more complex than atomic vectors, because lists can contain other lists.
+#They are sutiable for representing hierarchical or tree-like structures.
+#Create a list with list():
+x <- list(1, 2, 3)
+x
 
+#A useful tool for working with lists is str(), which focuses on the structure, not the contents:
+str(x)
+
+x_named <- list(a=1, b=2, c=3)
+str(x_named)
+
+#Unlike vectors, lists() can consist of a mix of objects:
+y <- list("a", 1L, 1.5, TRUE)
+str(y)
+
+#Lists can even contain other lists:
+z <- list(list(1,2), list(3,4))
+str(z)
+
+#20.5.1: Visualizing Lists ######################################
+#See OneNote for depiction
+
+
+#20.5.2: Subsetting ######################################
+#3 ways to subset a list:
+a <- list(a = 1:3, b="a string", c= pi, d= list(-1,-5))
+
+#1.) [ extracts a sublist.  The result will always be a list:
+str(a[1:2])
+
+#As with vectors, we can subet with a logical, integer, or character vector.
+
+#2.) [[extracts a single component from a list.  It removes a level of hierarchy from the list:
+str(y)
+str(y[[1]])
+str(y[[4]])
+
+#3.) $ is shorthand for extracting named elements of a list:
+a$a
+a$c
+a$d
+
+
+#20.5.3: Lists of condiments ######################################
+#skip
+
+#20.5.4: Exercises ######################################
 
 
 #20.6: Attributes #############################################
+#Any vector can contain additional metadata through its attributes.
+#Think of attributes as a list of named vectors which can be attached to any object.
 
+#Get and set individual attributes with attr(), or see them all at once with attributes()
+x <- 1:10
+attr(x, "greeting")
+
+attr(x, "greeting") <- "Hi!"
+attr(x, "farewell") <- "Bye!"
+attributes(x)
+x
+
+  #There are 3 important attributes used to implement fundamental parts of R:
+
+    #Names are used to name the elements of a vector
+    #Dimensions (or 'dims') make a vector behave like a matrix or an array
+    #Class is used to implement the S3 object-oriented system
+      #A detailed discussion of object-oriented programming is found here: http://bit.ly/OOproadvR
+
+  #A typical generic function:
+  as.Date
 
 
 #20.7: Augmented Vectors ######################################
+#Atomic vectors and lists are building blocks for important vector types like factors and dates.  
+  #These are referred to as augmented vectors, because they are vectors with additional attributes such as class.
+  #Because they have a class, they behave differently than atomic vectors.
+  
+  #Four important augmented vectors: Factors, Date-times and times, and Tibbles
+  
+#20.7.1: Factors ######################################
 
+
+#20.7.2: Dates and Date-times ######################################
+
+
+#20.7.3: Tibbles ######################################
+
+
+#20.7.4: Exercises ######################################
 
 
 ###############################################################
