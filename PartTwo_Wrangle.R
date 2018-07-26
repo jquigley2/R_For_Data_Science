@@ -3482,10 +3482,25 @@ y <- as.POSIXlt(x)
 typeof(y)
 attributes(y)
 
+#You'll see these occassionally in base R, as they are necessary to extract specific 
+#date components (month, day, second, etc...). POSIXct's are easier to work with, so if
+#you have a POSIXlt, convert it to a regular time via lubridate::as_date_time().
+
 #20.7.3: Tibbles ######################################
+#Tibbles are augmented lists. They have class "tbl_df" + "tbl" + "data.frame", and 
+#names (column) and row.names attributes:
+tb <- tibble::tibble(x=1:5, y=5:1)
+typeof(tb)
 
+attributes(tb)
 
+#The difference between a tibble and a list is that all of the elements of a data frame 
+#must be vectors of the same length.  All functions that work with tibbles enforce the constraint.
 
+#Traditional data.frames have a very similar structure:
+df <- data.frame(x=1:5, y=5:1)
+typeof(df)
+attributes(df) 
 
 #20.7.4: Exercises ######################################
 
