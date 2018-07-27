@@ -3503,18 +3503,203 @@ typeof(df)
 attributes(df) 
 
 #20.7.4: Exercises ######################################
+#1.) What does hms::hms(3600) return? 
+x <- hms::hms(3600)
+#How does it print? 
+#What primitive type is the augmented vector built on top of? 
+typeof(x)
+#What attributes does it use?
+attributes(x)
+
+#2.) Try and make a tibble that has columns with different lengths. What happens?
+tb <- tibble::tibble(x=1:4, y=5:1)
 
 
-
-
+#3.) Based on the definition above, is it ok to have a list as a column of a tibble?
+tb <- tibble::tibble(x = 1:3, y = list("a", 1, list(1:3)))
+#Yes, it's fine
 
 ###############################################################
 #21: Iterations with purrr ####################################
 ###############################################################
+#21.1: Introduction ######################################
+#In Chapter 19 - Functions, we covered reduce duplication in code by creating functions 
+#instead of copy-pasting.  There are 3 main benefits to reducing code duplication:
+#1. Easier to see intent of code - you notice what is different rather than what is the same
+#2. Easier to respond to changes in requirements.  As needs change, you only need to change 
+#the code in one place.
+#3. Likely fewer bugs, because each line is used in more places.
+
+#Functions is one means of reducing duplication.
+
+#Iteration is another.  This helps when we need ot do the same thing to multiple inputs - 
+#repeating operations on different columns or data sets.
+
+#Two important iteration paradigms: imperative programming and functional programming.
+#Imperative Programming- tools like for loops and while loops.  Very explicit iteration, but very verbose.
+
+#Functional Programming (FP) offers tools to extract out the duplicated code, so each common 
+#for loop code gets its own function.  Allows for much less code, easier, with fewer errors.
+
+#21.1.1: Prerequisites ######################################
+library(tidyverse) #to load purrr
+
+#21.2: For Loops ######################################
+#Imagine this simple tibble: 
+df <- tibble(
+  a=rnorm(10),
+  b=rnorm(10),
+  c=rnorm(10),
+  d=rnorm(10)
+)
+
+#Compute the median of each column.  We could do this with copy and paste:
+median(df$a)
+median(df$b)
+median(df$c)
+median(df$d)
+
+#However, this breaks our rule of thumb: Never copy and paste >2x. Instead, use a loop!:
+output <- vector("double", ncol(df)) #1. output
+for (i in seq_along(df)) {           #2. sequence
+  output[[i]] <- median(df[[i]])     #3. body
+}
+output
+#Every for loop has 3 components:
+  #1. The output: output <- vector("double", length(x))  Before starting a loop, we must allocate 
+#sufficient space for the output. This is very important, as it will speed the loop.
+
+#General way of creating an empty vector of a given length is the vector() function.
+#It has 2 arguments: The type of vector ("logical", "integer", "double") and the length.
+
+  #2. The sequence: i in seq_along(df)  This determines what to loop over. Each run of the for loop
+#will assign i to a different value from seq_along(df).  It's useful to think of i as a pronoun, like "it".
+
+  #3. The body: output[[i]] <- median(df[[i]])  This is the code that does the work.
+#It's run repeatedly, each time with a different value for i.  The first iteration will run 
+#output[[1]] <- median(df[[1]]), the second iteration will run output[[2]] <- median(df[[2]])...
+
+#21.2.1: For Loops Exercises ######################################
+#1. Write for loops to:
+
+  #Compute the mean of every column in mtcars.
+str(mtcars)
+
+output <- vector("double", ncol(mtcars)) #1. output
+for (i in seq_along(mtcars)) {           #2. sequence
+  output[[i]] <- mean(mtcars[[i]])     #3. body
+}
+output
+  
+#Determine the type of each column in nycflights13::flights.
+library(nycflights13)
+str(nycflights13::flights)
+
+output <- vector("list", ncol(flights)) #1. output
+names(output) <- names(flights)
+for (i in names(flights)) {           #2. sequence
+  output[[i]] <- class(flights[[i]])     #3. body
+}
+output
+
+  #Compute the number of unique values in each column of iris.
+str(iris) #check structure
+
+iris_uniq <- vector("integer", ncol(iris)) #1. output
+
+names(iris_uniq) <- names(iris) #set names of output columns = to those of the data frame 
+
+for (i in names(iris)) {           #2. sequence
+  iris_uniq[i] <- length(unique(iris[[i]]))     #3. body
+}
+
+iris_uniq
+
+  #Generate 10 random normals for each of ??=???10, 0, 10, and 100.
+#set number of items to draw
+n <- 10 
+#Set values of the mean:
+mu <- c(-10,0,10,100)
+
+normals <- vector("list", length(mu)) #1. output
+for (i in seq_along(normals)) {           #2. sequence
+  normals[[i]] <- rnorm(n, mean = mu[i])     #3. body
+}
+
+normals
+
+#2. Eliminate the for loop in each of the following examples by taking advantage of an existing function that works with vectors:
+out <- ""
+for (x in letters) {
+  out <- stringr::str_c(out, x)
+}
+
+#With function:
+str_c(letters, collapse = "")
+
+x <- sample(100)
+stdev <- 0
+for (i in seq_along(x)) {
+  stdev <- stdev + (x[i] - mean(x)) ^ 2
+}
+stdev <- sqrt(stdev / (length(x) - 1))
+
+#With function:
+sd(x)
+
+x <- runif(100)
+out <- vector("numeric", length(x))
+out[1] <- x[1]
+for (i in 2:length(x)) {
+  out[i] <- out[i - 1] + x[i]
+}
+
+#With function:
+all.equal(cumsum(x), out)
+
+#3. Combine your function writing and for loop skills:
+  #c. Convert the song ???99 bottles of beer on the wall??? to a function. Generalise to any number of any vessel containing any liquid on any surface.
+
+
+
+#4. It???s common to see for loops that don???t preallocate the output and instead increase the length of a vector at each step:
+  
+  output <- vector("integer", 0)
+for (i in seq_along(x)) {
+  output <- c(output, lengths(x[[i]]))
+}
+output
+
+#How does this affect performance? Design and execute an experiment.
 
 
 
 
+#21.3: For loop variations######################################
+
+
+
+#21.4: For loops vs. functions ######################################
+
+
+
+#21.5: The map functions ######################################
+
+
+
+#21.6: Dealing with failure ######################################
+
+
+
+#21.7: Mapping over multiple arguments ######################################
+
+
+
+#21.8: Walk ######################################
+
+
+
+#21.9: Other patterns of for loops ######################################
 
 
 
