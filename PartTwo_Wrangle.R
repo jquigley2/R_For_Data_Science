@@ -4049,6 +4049,62 @@ x %>% map_dbl(2)
 
 
 #21.5.2: Base R ######################################
+#There are similarities between purrr and the apply family of functions.
+
+#lapply() is similar to map(), except that map() is consistent with all functions in purrr, 
+#and we can use the shortcuts for .f
+
+#Base sapply() is a wrapper around lapply() that automatically simplifies output.
+#This si good for interactive work, but problematic in a function because you never know what 
+#sort of output you'll get:
+x1 <- list(
+  c(0.27, 0.37, 0.57, 0.91, 0.20),
+  c(0.90, 0.94, 0.66, 0.63, 0.06), 
+  c(0.21, 0.18, 0.69, 0.38, 0.77)
+)
+
+x2 <- list(
+  c(0.50, 0.72, 0.99, 0.38, 0.78), 
+  c(0.93, 0.21, 0.65, 0.13, 0.27), 
+  c(0.39, 0.01, 0.38, 0.87, 0.34)
+)
+
+threshold <- function(x, cutoff = 0.8) x[x > cutoff]
+x1 %>% sapply(threshold) %>% str()
+x2 %>% sapply(threshold) %>% str()
+
+#vapply() is a safer alternative to sapply(), because you supply additional arguments to define the type.
+#however, vapply() is a lot of typing: vapply(df, is.numeric, logical(1)) is equivalent to map_lgl(df, is.numeric).
+#vapply() can produce matrices, map cannot.
+
+#21.5.3 Exercises
+#1. Write code that uses one of the map functions to:
+  #a. Compute the mean of every column in mtcars.
+map_dbl(mtcars, mean)  
+
+  #b. Determine the type of each column in nycflights13::flights.
+map(nycflights13::flights, class)
+
+  #c. Compute the number of unique values in each column of iris.
+map_int(iris, ~length(unique(.)))
+
+  #d. Generate 10 random normals for each of ?? =  ???10, 0, 10, and 100.
+map(c( ???10, 0, 10, 100),rnorm, n=10)
+
+#2. How can you create a single vector that for each column in a data frame indicates whether or not it???s a factor?
+?map_lgl
+map_lgl(mtcars, is.factor)
+
+#3. What happens when you use the map functions on vectors that aren???t lists? What does map(1:5, runif) do? Why?
+map(1:5, runif)
+
+#4. What does map(-2:2, rnorm, n = 5) do? Why? What does map_dbl(-2:2, rnorm, n = 5) do? Why?
+map(-2:2, rnorm, n = 5) #takes samples of n=5 from normal distributions of means -2,-1,0,1,2 and returns a list for each
+map_dbl(-2:2, rnorm, n = 5)#map_dbl expects the function to return a numeric vector of length one.  Instead, try:
+flatten_dbl(map(-2:2, rnorm, n=5))
+
+#5. Rewrite map(x, function(df) lm(mpg ~ wt, data = df)) to eliminate the anonymous function.
+map(list(mtcars), ~lm(mpg ~wt, data=.))
 
 
 #21.6: Dealing with failure ######################################
