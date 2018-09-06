@@ -4108,18 +4108,247 @@ map(list(mtcars), ~lm(mpg ~wt, data=.))
 
 
 #21.6: Dealing with failure ######################################
+#When we use the map functions to repeat many procedures, we have an increased chance of failure.
+#This results in a failure message, and no output at all.  Here, we learn how to deal with this with safely().
 
+#safely() is an adverb; it takes a function (a verb) and returns a modified version.
+#The modified version won't throw an error; instead, it returns a list with 2 elements:
+
+  #1. result is the original result.  If there was and error, this will be NULL
+  #2. error is an object error; if the operation was successful, this will ne NULL
+
+#An example:
+safe_log <- safely(log)
+str(safe_log(10))
+
+str(safe_log(a))
+
+#safely is designed to work with map.
+x <- list(1, 10, "a")
+y <- x %>%map(safely(log))
+str(y)
+
+#Would be better if we had 2 lists: one with all of the errors, a second with all the output.
+#Easy to get this using purrr::transpose():
+y <- y%>% transpose()
+str(y)
+
+#Typically will look at either the values of X where y is an error, or work with y's which are okay:
+is_ok <- y$error %>% map_lgl(is_null)
+x[!is_ok]
+
+y$result[is_ok] %>% flatten_dbl()
+
+#Two other useful adverbs in purrr:
+  #possibly() also always succeeds.  You give it a default value to return when there's an error:
+x <- list(1,10,"a")
+x %>% map_dbl(possibly(log, NA_real_))
+
+  #quietly() performs a role similar to safely(), but instead of capturing errors, it captures
+  #printed output, messages, and warnings:
+x <- list(1,-1)
+x %>% map(quietly(log)) %>% str()
 
 
 #21.7: Mapping over multiple arguments ######################################
+#map2() and pmap() allow us to iterate along multiple related inputs in parallel.
 
+#For example, simulate some random normals with different means:
+mu <- list(5, 10, -3)
+mu %>%
+  map(rnorm, n=5) %>%
+  str()
+
+#But, what if we also want to vary the stdev?
+#use map2():
+sigma <- list(1,5,10)
+
+map2(mu, sigma, rnorm, n=5) %>% str()
+#Note: arguments which vary for each call come before the function; arguments which are static for each call come after.
+
+#map2() is just a wrapper around a for loop:
+map2 <- function(x, y, f, ...) {
+  out <- vector("list", length(x))
+  for (i in seq_along(x)) {
+    out[[i]] <- f(x[[i]], y[[i]],...)
+  }
+  out
+}
+
+#We can imagine map3(), map4(), etc...
+#purrr provides pmap() so that we can provide a lists of arguments
+?pmap
+
+n <- list(1, 3, 5)
+args1 <- list(n, mu, sigma)
+args1 %>%
+  pmap(rnorm) %>%
+  str()
+
+#pmap uses positional matching when calling the function if you don't name the elements of the list.
+#It's better to name the arguments:
+args2 <- list(mean=mu, sd=sigma, n=n)
+
+args2 %>%
+  pmap(rnorm) %>%
+  str()
+
+#Since the arguments are the same length, it makes sense to store them in a data frame:
+params <- tribble(
+  ~mean, ~sd, ~n,
+  5, 1, 1, 
+  10, 5, 3,
+  -3, 10, 5
+)
+params%>%
+  pmap(rnorm)
+
+#21.7.1: Invoking Different Functions ######################################
+#In addition to varying the arguments to the function, you might want to vary the function itself:
+f <- c("runif", "rnorm", "rpois")
+param <- list(
+  list(min=-1, max=1),
+  list(sd = 5),
+  list(lambda = 10)
+)
+
+#To handle this case, use invoke_map():
+invoke_map(f, param, n = 5) %>% str()
+#First argument is the list of functions, second a list of list with arguments for each function.
+
+#can use tribble to make creting the matching pairs easier:
+sim <- tribble(
+  ~f, ~params,
+  "runif", list(min=-1, max=1),
+  "rnorm", list(sd=5),
+  "rpois", list(lambda = 10)
+)
+sim %>%
+  mutate(sim = invoke_map(f, params, n=10))
 
 
 #21.8: Walk ######################################
+#Walk is an alternative to map, used when calling a fnction for side effects rather than for its return value.
+#For example, if you want to render output to a screen, or to save files.  For example:
 
+x <-  list(1, "a", 3)
+
+x %>% 
+  walk(print)
+
+#walk2() or pwalk() are much more useful.  For example, if you have a list of plots and a vector of filenames:
+library(ggplot2)
+plots <- mtcars %>%
+  split(.$cyl) %>%
+  map(~ggplot(., aes(mpg, wt)) + geom_point())
+paths <- stringr::str_c(names(plots), ".pdf")
+
+pwalk(list(paths, plots), ggsave, path = tempdir())
 
 
 #21.9: Other patterns of for loops ######################################
+#These are less useful, but good to know about.
+
+#21.9.1: Predicate Functions ######################################
+#A number of functions work with predicate functions that return either a single TRUE or FALSE
+
+#keep() and discard() retain certain elements of the input where the predicate is TRUE or False, respectively:
+str(iris)
+
+iris %>%
+  keep(is.factor) %>%
+  str()
+
+iris %>%
+  discard(is.factor) %>%
+  str()
+
+#some() and every() determine whether the predicate is true for any or all of the elements:
+x <- list(1:5, letters, list(10))
+
+x %>%
+  some(is_character)
+
+x %>%
+  every(is_character)
+
+#detect() finds the first element where the predicate is true; detect_index()  returns its position:
+x <- sample(10)
+x
+
+x %>%
+  detect(~.>5)
+
+x %>%
+  detect_index(~.>5)
+
+#head_while() and tail_while() take elements from the start or end of a vector while a predicate is true
+x %>%
+  head_while(~.>5)
+
+x %>%
+  tail_while(~.>5)
+
+
+#21.9.2: Reduce and Accumulate ######################################
+#You may have a complex lists you want to reduce to a simple list by repeatedly applyng a function.
+#Say you have a list of data frames, and want to reduce to a single df by joining the elements together:
+
+dfs <- list(
+  age = tibble(name = "John", age = 30),
+  sex = tibble(name=c("John", "Mary"), sex = c("M", "F")),
+  trt = tibble(name = "Mary", treatment = "A")
+)
+
+dfs %>% reduce(full_join)
+
+#Or maybe you have a list of vectors and want to find the intersection:
+vs <- list(
+  c(1,3,5,6,10),
+  c(1,2,3,7,8,10),
+  c(1,2,3,4,8,9,10)
+)
+
+vs %>% reduce(intersect)
+
+#Accumulate() is similar, but keeps all of the interim results.  For insance, for a cumulative sum:
+x <- sample(10)
+x
+x %>% accumulate(`+`)
+
+
+#21.9.3: Exercises ######################################
+#1. Implement your own version of every() using a for loop. 
+#Compare it with purrr::every(). 
+#What does purrr???s version do that your version doesn???t?
+
+#2. Create an enhanced col_sum() that applies a summary function to every numeric column in a data frame.
+
+#3. A possible base R equivalent of col_sum() is:
+  col_sum3 <- function(df, f) {
+    is_num <- sapply(df, is.numeric)
+    df_num <- df[, is_num]
+    
+    sapply(df_num, f)
+  }
+
+#But it has a number of bugs as illustrated with the following inputs:
+  df <- tibble(
+    x = 1:3, 
+    y = 3:1,
+    z = c("a", "b", "c")
+  )
+# OK
+col_sum3(df, mean)
+# Has problems: don't always return numeric vector
+col_sum3(df[1:2], mean)
+col_sum3(df[1], mean)
+col_sum3(df[0], mean)
+
+#What causes the bugs?
+
+
+
 
 
 
