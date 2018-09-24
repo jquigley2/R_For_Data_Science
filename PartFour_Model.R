@@ -37,18 +37,22 @@ ggplot(sim1, aes(x,y)) +
   geom_point()
 #The relationship appears to be linear: y = a_0 + a_1 * x
 
-#Generate a few linear models by using geom_abline(), which takes a slope and intercept as parameters:
+#Generate a few linear models:
+
+#create a tibble
 models <- tibble(
-  a1 = runif(250, -20, 40),
-  a2 = runif(250,-5,5)
+  a1 = runif(250, -20, 40), #column 1 has 250 oservations ranging from -10 to 40
+  a2 = runif(250,-5,5) #column 2 has 250 observations ranging from -5 to 5
 )
 
+#use geom_abline(), which takes a slope and intercept as parameters:
+?geom_abline
 ggplot(sim1, aes(x,y)) + 
   geom_abline(aes(intercept=a1, slope = a2), data = models, alpha = 1/4) +
   geom_point()
 
-#To measure the goodness of fit, turn the model family into a function which takes the model parameters and data as inputs, 
-#and give predicted values.
+#To measure the goodness of fit, turn the model family into a function which takes the model parameters and data 
+#as inputs, and give predicted values.
 model1 <- function(a, data) {
   a[1] + data$x * a[2]
 }
@@ -84,7 +88,7 @@ ggplot(sim1, aes(x,y)) +
     data = filter(models, rank(dist) <=10)
   )
 
-#We can think of these models as observations. Here, a scatterplot of a1 vs a2, colred by -dist.
+#We can think of these models as observations. Here, a scatterplot of a1 vs a2, colored by -dist.
 #10 best models are again highlighted:
 ggplot(models, aes(a1, a2)) +
   geom_point(data = filter(models, rank(dist) <=10), size=4, color = "red") +
@@ -258,11 +262,140 @@ df <- tribble(
 )
 model_matrix(df, y~x1)
 
-#R adds the intercept to the model via a column full of 1's, by default..
+#R adds the intercept to the model via a column full of 1's, by default.
+#If you don't want this column, explicitly drop it with -1:
+model_matrix(df, y ~ x1 -1)
+
+model_matrix(df, y ~x1 + x2)
 
 #23.4.1: ***************************** Categorical variables *****************************
+#When the predictor is categorical, like y ~ sex, sex obviously isn't a number.  So, R converts this to
+#y = x_0 + x_1 * sex_male, where sex_male = 1 if male, 0 if female:
+
+df <- tribble(
+  ~sex, ~response,
+  "male",1,
+  "female", 2,
+  "male",1
+)
+
+model_matrix(df, response ~ sex)
+
+#If we focus on visualizing predictions, we needn't worry about parameterization.
+#Let's look at the sim2 data set from modelr:
+
+ggplot(sim2) +
+  geom_point(aes(x,y))
+
+#Fit to a model:
+mod2 <- lm(y ~ x, data = sim2)
+
+#generate predictions:
+grid <- sim2 %>%
+  data_grid(x) %>%
+  add_predictions(mod2)
+
+#review predictions
+grid 
+
+#overlay predictions on original data:
+ggplot(sim2, aes(x)) + 
+  geom_point(aes(y=y)) +
+  geom_point(data = grid, aes(y=pred), color="red", size=4)
+
+
 #23.4.2: ***************************** Interactions(continuous and categorical) *****************************
+#sim3 contains a continuous and a categorical predictor.
+#Visualize:
+ggplot(sim3, aes(x1,y)) + 
+  geom_point(aes(color=x2))
+
+
+#Two possible models we could fit to this data:
+mod1 <- lm(y ~ x1 + x2, data = sim3)
+mod2 <- lm(y ~ x1 * x2, data = sim3)
+
+#When we add variables with +, the model estimates each effect independent of the others.
+#When we multiply, we capture the interaction.  When we use *, both the interaction and the components
+#are included in the model.  mod2 translates to: y = a_0 + (a_1*x_1) + (a_2 * x_2) + (a_12*x_1*x_2)
+
+#To visualize the two models, we need 2 tricks:
+
+  #1. We have 2 predictors, so need to give both to data_grid().  This will find all unique values
+  #of x_1 and x_2 and then generate all combinations.
+  
+  #2. To generate predictions from each model simultaneously, use gather_predictions(), which adds each prediction
+  #as a row.  The complement is spread_predictions(), which adds each prediction to a new column.
+
+#Together:
+grid <- sim3 %>%
+  data_grid(x1,x2) %>%
+  gather_predictions(mod1, mod2)
+grid
+
+#Visualize the results for both models on one plot by using faceting:
+ggplot(sim3, aes(x1, y, color=x2)) +
+  geom_point() +
+  geom_line(data=grid, aes(y=pred)) + 
+  facet_wrap(~model)
+
+#We can see the model which uses + has different intercepts, but the same slope for each line.
+#The model which uses * has differing slopes and intercepts.  
+#Which is better?
+sim3 <- sim3 %>%
+  gather_residuals(mod1, mod2)
+
+ggplot(sim3, aes(x1, resid, color=x2)) +
+  geom_point() +
+  facet_grid(model ~ x2)
+
+#There's little obvious pattern for the residuals from model2
+
+
+
+
 #23.4.3: ***************************** Interactions (2 continuous) *****************************
+mod1 <- lm(y ~ x1 + x2, data=sim4)
+mod2 <- lm(y ~ x1 * x2, data = sim4)
+
+grid <- sim4 %>% 
+  data_grid(
+    x1 = seq_range(x1, 5),
+    x2 = seq_range(x2, 5)
+  ) %>% 
+  gather_predictions(mod1, mod2)
+
+grid
+
+#Note use of seq_range() in data_grid().  Instead of using every unique value of x, this uses
+#a regularly spaced grid of of 5 values between min and max numbers.  A useful technique!
+
+#Two other useful arguments to seq_range():
+  #pretty=TRUE will generate a "pretty" sequence (looks nice to the eye).  This is useful when 
+  #producing tables of output:
+seq_range(c(0.0123, 0.923423),n=5)
+seq_range(c(0.0123, 0.923423),n=5, pretty=TRUE)
+
+  #trim = 0.1 will trim off 10% of the tail values.  This is great when variables have long-tailed distribution:
+x1 <- rcauchy(10)
+seq_range(x1, n=5)
+seq_range(x1, n=5, trim=0.1)
+seq_range(x1, n=5, trim=0.25)
+seq_range(x1, n=5, trim=0.5)
+
+  #expand = 0.1 is in some sense the opposite - it exapnds the range by 10%:
+x2 <- c(0,1)
+seq_range(x2, n=5)
+seq_range(x2, n=5, expand=0.10)
+seq_range(x2, n=5, expand=0.25)
+seq_range(x2, n=5, expand=0.50)
+
+#Try to visualize that model.  Since we have 2 continuous predictors, we can imagine a 3D surface:
+ggplot(grid, aes(x1, x2)) +
+  geom_tile(aes(fill = pred)) +
+  facet_wrap(~ model)
+
+
 #23.4.4: ***************************** Transformations *****************************
 
 
