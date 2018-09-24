@@ -190,7 +190,7 @@ library(tidyverse)
 
 #These all have a similar syntax; if you know how to use read_csv(), you can use any of these!
 
-#First argument is most iportant: teh path to read the file.
+#First argument is most iportant: the path to read the file.
 heights <- read_csv("diamonds.csv")
 
 #Can also suply an inline .csv file:
@@ -418,11 +418,11 @@ problems(x)
       
 #2.What happens if you try and set decimal_mark and grouping_mark to the same character? What happens to the default value of grouping_mark when you set decimal_mark to b ,b ? What happens to the default value of decimal_mark when you set the grouping_mark to b .b ?
       
-#3.I didnb t discuss the date_format and time_format options to locale(). What do they do? Construct an example that shows when they might be useful.
+#3.I didn't discuss the date_format and time_format options to locale(). What do they do? Construct an example that shows when they might be useful.
       
 #4.If you live outside the US, create a new locale object that encapsulates the settings for the types of file you read most commonly.
       
-#5.Whatb s the difference between read_csv() and read_csv2()?
+#5.What's the difference between read_csv() and read_csv2()?
       
 #6.What are the most common encodings used in Europe? What are the most common encodings used in Asia? Do some googling to find out.
       
