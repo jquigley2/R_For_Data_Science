@@ -355,7 +355,7 @@ ggplot(sim3, aes(x1, resid, color=x2)) +
 
 
 #23.4.3: ***************************** Interactions (2 continuous) *****************************
-mod1 <- lm(y ~ x1 + x2, data=sim4)
+mod1 <- lm(y ~ x1 + x2, data = sim4)
 mod2 <- lm(y ~ x1 * x2, data = sim4)
 
 grid <- sim4 %>% 
@@ -394,9 +394,102 @@ seq_range(x2, n=5, expand=0.50)
 ggplot(grid, aes(x1, x2)) +
   geom_tile(aes(fill = pred)) +
   facet_wrap(~ model)
+#A bit difficult to differntiate between the two models.
+
+#We could instead look at the results from the side, using multiple angles:
+ggplot(grid, aes(x1, pred, color=x2, group=x2)) +
+  geom_line() +
+  facet_wrap(~model)
+
+ggplot(grid, aes(x2, pred, color=x1, group=x1)) +
+  geom_line() +
+  facet_wrap(~model)
 
 
 #23.4.4: ***************************** Transformations *****************************
+#We can perform transformations inside the model formula.  For example, 
+#log(y) ~ sqrt(x1) + x2 is transformed into log(y) = a1 + a2*sqrt(x1) +a3*x2.
+
+#If your xform involves +, *, ^, or -, we need to wrap it in I() so R doesn't treat it as part of the 
+#model specification.  
+
+#For example, y ~ x + I(x^2) is translated to y = a1 + a2*x + a3*x^2.
+#if we forget the I() and specify y ~ x^2 + x, R will compute y ~ x*x + x.
+#x*x means the interaction of x with itself, which is the same as x.  R will drop redundant variables,
+#so x + x becomes x, meaning the function is actually y = a1 + a2*x!
+
+#If you get confused about what your model is doing, use model_matrix:
+df <- tribble(
+  ~y, ~x,
+  1, 1,
+  2, 2,
+  3, 3
+)
+
+model_matrix(df, y ~ x^2 + x)
+
+model_matrix(df, y ~ I(x^2) + x)
+
+
+#We can use xforms to approximate non-linear data.  Taylor's Theorem says we can approximate any smooth 
+#function with an infinite number of polynomials. https://en.wikipedia.org/wiki/Taylor%27s_theorem
+#So, we can fit an equation like y = a_1 + a_2*x + a_3*x^2 + a_4*x^3. R provides a shortcut poly():
+model_matrix(df, y ~ poly(x,2))
+
+
+#Outside the range of data, polynomials rapidly converge toward infinity.
+#Natural spline spline::ns() is a safer alternative: https://en.wikipedia.org/wiki/Spline_interpolation
+library(splines)
+
+model_matrix(df, y~ns(x, 2))
+
+#let's see what approximating a non-linear function looks like:
+sim5 <- tibble(
+  x=seq(0, 3.5*pi, length=50),
+  y=4 * sin(x) + rnorm(length(x))
+)
+
+ggplot(sim5, aes(x,y)) + 
+  geom_point()
+
+#Fit 5 models to the data:
+mod1 <- lm(y ~ ns(x, 1), data = sim5)
+mod2 <- lm(y ~ ns(x, 2), data = sim5)
+mod3 <- lm(y ~ ns(x, 3), data = sim5)
+mod4 <- lm(y ~ ns(x, 4), data = sim5)
+mod5 <- lm(y ~ ns(x, 5), data = sim5)
+
+grid <- sim5 %>% 
+  data_grid(x = seq_range(x, n=50, expand=0.1)) %>% 
+  gather_predictions(mod1,mod2,mod3,mod4,mod5, .pred = "y")
+
+ggplot(sim5, aes(x,y)) +
+  geom_point() + 
+  geom_line(data = grid, color="red") + 
+  facet_wrap(~model)
+#The extrapolation outsode of the observed range is poor, but this is true for all models.
+
+
+#23.4.5: ***************************** Exercises *****************************
+#1. What happens if you repeat the analysis of sim2 using a model without an intercept. 
+#What happens to the model equation? 
+#What happens to the predictions?
+
+#2. Use model_matrix() to explore the equations generated for the models I fit to sim3 and sim4. 
+#Why is * a good shorthand for interaction?
+
+#3. Using the basic principles, convert the formulas in the following two models into functions. 
+#(Hint: start by converting the categorical variable into 0-1 variables.)
+
+  #mod1 <- lm(y ~ x1 + x2, data = sim3)
+  #mod2 <- lm(y ~ x1 * x2, data = sim3)
+
+#4. For sim4, which of mod1 and mod2 is better? 
+#I think mod2 does a slightly better job at removing patterns, but it???s pretty subtle. 
+#Can you come up with a plot to support my claim?
+
+
+
 
 
 #23.5: ***************************** Missing Values *****************************
@@ -432,20 +525,330 @@ nobs(mod)
 
 
 
-
-
-
-
+#*********************************************************************************************
 #24: ******************************* Model Building *****************************
 #24.1: ***************************** Introduction *****************************
-
+#This chapter uses real data to show how we progressively build a model to aid our understanding.
+#We'll think about a model as partitioning the data into patterns and residuals.
+#We'll find patterns with visualization, and make them concrete with a model.
+#We'll then repeat, but swap in the residuals for the former response variable.
+#24.1.1: ***************************** Prerequisites *****************************
+library(tidyverse, modelr)
+options(na.action=na.warn)
+library(nycflights13) #for the flights dataset
+library(lubridate) #to work with date/times
 
 
 #24.2: ***************************** Why are low-quality Diamonds More Expensive?*****************************
+#Do low quality diamonds (poor cut, bad color, inferior clarity )really have higher prices?
+ggplot(diamonds, aes(cut, price)) + geom_boxplot()
+ggplot(diamonds, aes(color, price)) + geom_boxplot()
+ggplot(diamonds, aes(clarity, price)) + geom_boxplot()
 
+#24.2.1: ***************************** Price & Carat
+#It appears the lowest quality diamonds have the highest price - but we've ignored weight to this point!
+ggplot(diamonds, aes(carat, price)) +
+  geom_hex(bins=50)
+
+#We should separate out the carat effect to better understand the impact of other attributes.
+#First, let's tweak the data set to make it easier to work with:
+  #Focus on diamonds <2.5 carats
+  #Log-xform the carat and price variables
+?diamonds
+str(diamonds)
+
+diamonds2 <- diamonds %>% 
+  filter(carat <= 2.5) %>% 
+  mutate(lprice = log2(price), lcarat = log2(carat))
+
+#These changes make it easier to see the relationship between carat and price:
+ggplot(diamonds2, aes(lcarat, lprice)) +
+  geom_hex(bins=50)
+
+#The log xform is effective because it made the pattern linear.
+#Next, let's remove that linear pattern:
+  #First, make the pattern explicit by fitting a model
+mod_diamond <- lm(lprice ~ lcarat, data = diamonds2)
+
+  #Back xform the prediction by undoing the log xform, so we can overlay predictions on nthe raw data:
+grid <- diamonds2 %>% 
+  data_grid(carat = seq_range(carat, 20)) %>% 
+  mutate(lcarat = log2(carat)) %>% 
+  add_predictions(mod_diamond, "lprice") %>% 
+  mutate(price = 2 ^ lprice)
+
+ggplot(diamonds2, aes(carat, price)) +
+  geom_hex(bins = 50) +
+  geom_line(data = grid, color="red", size=1)
+#It appears the larger diamonds are less expensive than predicted.  (likely b/c this data set excludes prices > $19k)
+
+#Examine residuals to confirm trend is removed:
+diamonds2 <- diamonds2 %>% 
+  add_residuals(mod_diamond, "lresid") #add lresid to the diamonds2 df
+
+ggplot(diamonds2, aes(lcarat, lresid)) +
+  geom_hex(bins=50)
+
+#Now we can compare the other traits agains the residuals to see those relationships
+ggplot(diamonds2, aes(cut, lresid)) +geom_boxplot()
+ggplot(diamonds2, aes(color, lresid)) +geom_boxplot()
+ggplot(diamonds2, aes(clarity, lresid)) +geom_boxplot()
+#Now we get the relationships we'd intuitively expect!
+
+#How to interpret the Y axis:
+  #A residual of -1 indicates that lprice was 1 unit lower than a prediction based solely on its weight.
+  #2^-1 is 1/2; points with a value of -1 are half the expected price, and points with a value of 1 are twice the expected price.
+
+
+#24.2.2: ***************************** A More Complicated Model
+#We can continue to build our model, moving effects we've observed into the model:
+mod_diamond2 <- lm(lprice ~ lcarat + color + cut + clarity, data=diamonds2)
+
+#It's more difficult to visualize a model with 4 predictors... But at least they're all independent.
+#We can plot them individually:
+??.model
+grid <- diamonds2 %>% 
+  data_grid(cut, .model = mod_diamond2) %>% 
+  add_predictions(mod_diamond2)
+
+grid
+
+ggplot(grid, aes(cut, pred)) +
+  geom_point()
+
+#If the model needs variables not supplied, data_grid() will automatically fill them in with typical values.  For continuous variables, 
+#it uses the median; for categorical, it uses the most common value.
+
+diamonds2 <- diamonds2 %>%
+  add_residuals(mod_diamond2, "lresid2")
+
+ggplot(diamonds2, aes(lcarat, lresid2)) +
+  geom_hex(bins=50)
+#This plot reveals some very large residuals (remember, 2 = 4x the expected price!)
+
+#It's useful to look at such observations individually:
+diamonds2 %>% #return the diamonds2 data
+  filter(abs(lresid2) > 1) %>%  #filtered for obs with abs(lresid)>1
+  add_predictions(mod_diamond2) %>%  #add predictions from mod_diamond2
+  mutate(pred = round(2 ^ pred)) %>% #and change pred 
+  select(price, pred, table, x:z) %>% #return just these variables
+  arrange(price) #sort the results by price
+  
+
+#24.2.3: ***************************** Exercises
+#1. In the plot of lcarat vs. lprice, there are some bright vertical strips. What do they represent?
+
+#2. If log(price) = a_0 + a_1 * log(carat), what does that say about the relationship between price and carat?
+
+#3. Extract the diamonds that have very high and very low residuals. 
+#Is there anything unusual about these diamonds? 
+#Are they particularly bad or good, or do you think these are pricing errors?
+
+#4. Does the final model, mod_diamond2, do a good job of predicting diamond prices? 
+#Would you trust it to tell you how much to spend if you were buying a diamond?
 
 
 #24.3: ***************************** What Affects the Number of Daily Flights?  *****************************
+?nycflights13::flights
+str(nycflights13::flights)
+#Let's work witht he number of flights which leave NYC per day
+
+#First, let's start by counting the number of flights per day:
+daily <- flights %>%  #build a data set called "daily" by taking data from flights
+  mutate(date=make_date(year, month, day)) %>%  #mutate the date format
+  group_by(date) %>% #group flights by date
+  summarize(n = n()) #count the # of flights per day
+
+#Examine result:
+daily
+
+#Visualize result:
+ggplot(daily, aes(date, n)) +
+  geom_line()
+
+
+#24.3.1: ***************************** Day of Week
+#Let's look at the distribution of flights by day of week:
+daily <- daily %>% 
+  mutate(wday = wday(date, label=TRUE))
+
+ggplot(daily, aes(wday, n)) + 
+  geom_boxplot()
+#We see fewer flights on weekends b/c most flights are for business.
+
+#We can remove this pattern via a model:
+#create a model to explain the impact of day on number flights
+mod <- lm(n ~ wday, data=daily) 
+
+#create a data set which includes day of the week and predicted number of flights, "n" 
+grid <- daily %>%  
+  data_grid(wday) %>% 
+  add_predictions(mod, "n")
+
+#Plot predictions over original data:
+ggplot(daily, aes(wday, n)) + 
+  geom_boxplot() +
+  geom_point(data = grid, color="red", size=4)
+
+#Now, compute and visualize the residuals:
+daily <- daily %>% 
+  add_residuals(mod) #add residuals from mod to data frame daily
+daily %>%   
+ggplot(aes(date, resid)) +
+  geom_ref_line(h=0) + #adds a refence line at zero
+  geom_line()
+
+#Y-axis now shows the deviation from expected # flights given the day of the week.
+#Some subtler parrens emerge:
+  #1.)Model appears to fail in early June.  Drawing the plot with one line per day of week adds clarity to the cause:
+ggplot(daily, aes(date, resid, color=wday)) +
+  geom_ref_line(h=0) + #adds a refence line at zero
+  geom_line()
+#Our model fails to capture the number of flights on Saturdays: it underestimates in the summer, overestimates int he fall. 
+
+#2. There are also certain days with fewer flights than expected:
+daily %>% 
+  filter(resid < -100)
+#Looks like holidays in all cases
+
+daily %>% 
+  filter(resid > 100)
+#Day after T-giving
+
+#3. Appears to be a subtler long-term trend across the year:
+#Highlight this with geom_smooth:
+daily %>% 
+  ggplot(aes(date, resid)) +
+  geom_ref_line(h=0) +
+  geom_line(color = "grey50") +
+  geom_smooth(se=FALSE, span = 0.20)
+#Fewer flights in the winter, more in the summer.
+
+#24.3.2: ***************************** Seasonal Saturday Effect
+#Let's go back to fix the Saturday effect.
+daily %>% 
+  filter(wday=="Sat") %>% 
+  ggplot(aes(date, n)) +
+  geom_point() + #to show discrete points
+  geom_line() + #interpolation between points
+  scale_x_date(NULL, date_breaks = "1 month", date_labels = "%b")
+#Note a peak in the summer, and note spring has more saturday travel than autumn.
+
+#Create a "term" variable to capture the 3 school terms:
+term <- function(date) {
+  cut(date,
+      breaks = ymd(20130101, 20130605, 20130825, 20140101),
+      labels=c("spring", "summer", "autumn")
+      )
+}
+
+#Add "term" to the daily df:
+daily <- daily %>% 
+  mutate(term=term(date))
+
+#Graph Saturday travel by term:
+daily %>% 
+  filter(wday == "Sat") %>% 
+  ggplot(aes(date, n, color=term)) +
+  geom_point(alpha = 1/3) +
+  geom_line() +
+  scale_x_date(NULL, date_breaks = "1 month", date_labels = "%b")
+
+#Here's how the term variable affects other days of the week:
+daily %>% 
+  ggplot(aes(wday, n, color = term)) +
+  geom_boxplot()
+
+#This appears to improve the model, albeit not by too much:
+mod1 <- lm(n ~ wday, data = daily)
+mod2 <- lm(n ~ wday * term, data = daily)
+
+daily %>% 
+  gather_residuals(without_term = mod1, with_term = mod2) %>% 
+  ggplot(aes(date, resid, color=model)) +
+  geom_line(alpha = 0.75)
+
+#We can see the problem by overlaying predictions on the raw data:
+grid <- daily %>% 
+  data_grid(wday, term) %>% 
+  add_predictions(mod2, "n")
+
+ggplot(daily, aes(wday,n)) +
+  geom_boxplot() +
+  geom_point(data = grid, color = "red") +
+  facet_wrap(~term)
+#Model seems to be finding the mean effect, but is being impacted by outliers.
+
+#Using a model which is robust to the impact of outliers MASS::rlm():
+?MASS::rlm #Robust regression with an M multiplier
+mod3 <- MASS::rlm(n ~ wday * term, data = daily)
+
+daily %>% 
+  add_residuals(mod3, "resid") %>% 
+  ggplot(aes(date, resid)) +
+  geom_hline(yintercept = 0, size=2, color="white") +
+  geom_line()
+
+
+#24.3.3: ***************************** Computed variables
+#If experimenting with many models, it's wise to bundle the creation of variables into a function.  For example:
+compute_vars <- function(data){
+  data %>% 
+    mutate(
+      term = term(date),
+      wday = wday(date, label = TRUE)
+    )
+}
+
+#Another option is to put all xforms directly into the model formula:
+wday2 <- function(x) wday(x, label = TRUE)
+mod3 <- lm(n ~ wday2(date)*term(date), data = daily)
+
+
+#24.3.4: ***************************** Time of Year: An Alternative Approach
+#Since a simple linear trend isn't adequate without our domain knowledge adjustments, we could use a spline:
+library(splines)
+
+mod <- MASS::rlm(n ~ wday * ns(date, 5), data = daily)
+
+daily %>% 
+  data_grid(wday, date=seq_range(date, n = 13)) %>% 
+  add_predictions(mod) %>% 
+  ggplot(aes(date, pred, color=wday)) +
+  geom_line() +
+  geom_point()
+#This reveals much the same pattern for Saturdays - confirming what we saw with the other approach.
+
+#24.3.5: ***************************** Exercises
+#1. Use your Google sleuthing skills to brainstorm why there were fewer than expected flights on 
+##Jan 20, May 26, and Sep 1. (Hint: they all have the same explanation.) 
+###How would these days generalise to another year?
+  
+#2. What do the three days with high positive residuals represent? How would these days generalise to another year?
+  daily %>% 
+  top_n(3, resid)
+
+#3. Create a new variable that splits the wday variable into terms, but only for Saturdays, i.e. it 
+##should have Thurs, Fri, but Sat-summer, Sat-spring, Sat-fall. 
+#How does this model compare with the model with every combination of wday and term?
+
+#4. Create a new wday variable that combines the day of week, term (for Saturdays), and public holidays. 
+#What do the residuals of that model look like?
+
+#5. What happens if you fit a day of week effect that varies by month (i.e. n ~ wday * month)? 
+#Why is this not very helpful?
+
+#6. What would you expect the model n ~ wday + ns(date, 5) to look like? 
+#Knowing what you know about the data, why would you expect it to be not particularly effective?
+
+#7. We hypothesised that people leaving on Sundays are more likely to be business travellers who 
+#need to be somewhere on Monday. 
+#Explore that hypothesis by seeing how it breaks down based on distance and time: 
+#if it???s true, you???d expect to see more Sunday evening flights to places that are far away.
+
+#8. It???s a little frustrating that Sunday and Saturday are on separate ends of the plot. 
+#Write a small function to set the levels of the factor so that the week starts on Monday.
+
 
 
 
@@ -469,23 +872,458 @@ nobs(mod)
 
 #25: ******************************* Many Models *****************************
 #25.1: ***************************** Introduction *****************************
+#Three powerful ideas to help you work with large numbers of models easily:
+  #1. Using many model to better undertand complex datasets
+  
+  #2. Using list-columns to store arbitrary data structures in a data frame.  For example, this will
+  #allow us to have a column which contains linear models.
+  
+  #3. Using the broom package to turn models into tidy data.
+  #This is powerful when working with a large number of models, because once we have tidy data, we 
+  #can apply all the techniques learned earlier.
 
-
+#25.1.1: ***************************** Prerequisites
+library(modelr, tidyverse)
 
 #25.2: ***************************** Gapminder *****************************
+library(gapminder)
+str(gapminder)
+head(gapminder)  
+  
+#How does life expectancy change over time for each country?
+#A plot is a good way to start exploring:
+gapminder %>% 
+  ggplot(aes(year, lifeExp, group=country)) +
+  geom_line(alpha = 1/3)
+
+#How might we hone in on countries which are bucking the overall trend?
+#First, we can tease out the overall uptrend.  Relatively easy for a single country:
+nz <- filter(gapminder, country=="New Zealand")
+
+nz %>% 
+  ggplot(aes(year, lifeExp))+
+  geom_line()+
+  ggtitle("Full Data = ")
+
+nz_mod <- lm(lifeExp ~ year, data = nz)
+
+nz %>% 
+  add_predictions(nz_mod) %>% 
+  ggplot(aes(year, pred)) +
+  geom_line() +
+  ggtitle("Linear trend + ")
+
+nz %>% 
+  add_residuals(nz_mod) %>% 
+  ggplot(aes(year, resid)) +
+  geom_line() +
+  ggtitle("Remaining Pattern")
+
+#How can we easily fit this to every other country?
+
+#25.2.1: *****************************Nested Data
+#Extract out the common code with a function and repeat using a map function from purrr.
+#Instead of repeating an action for each variable, we want to repeat an action for each country (a subset of rows).
+
+#To do so, we need a new data structure: the nested data frame.
+#To create this, we start with a grouped data frame, and nest it:
+by_country <- gapminder %>% 
+  group_by(country, continent) %>% 
+  nest()
+
+by_country
+
+#This created a data frame which has one row per group (per country), and an unusual column: "data".
+#Data is a list of data frames (tibbles, actually).
+
+#The data column is a bit tricky to view. If you pluck a single element from the data column, you can see 
+#it contains all the data from the given country:
+by_country$data[[1]]
+
+#In a grouped frame, each row is an observation; in a nested frame, each row is a group.
+
+
+#25.2.2: *****************************List-columns
+#now we can fit some models.
+#We have amodel-fitting function:
+country_model <- function(df) {
+  lm(lifeExp ~year, data = df)
+}
+
+#We want to apply it to every data frame.  Since the data frames are in a list, we can use purrr::map()
+#to apply contry_model to each row:
+models <- map(by_country$data, country_model)
+
+#It's better to store each model in the by_country data frame.  Use dplyr::mutate() to do this:
+by_country <- by_country %>% 
+  mutate(model=map(data, country_model))
+
+by_country
+
+#The big advantage is that because all related objects are stored together, we don't need to manually
+#keep them in sync when we filter or arrange.  If these were separate objects and we forgot to re-order,
+#the model would work - but we'd be getting the wrong answer!
+by_country %>% 
+  filter(continent=="Europe")
+
+by_country %>% 
+  arrange(continent, country)
+
+#25.2.3: *****************************Un-nesting
+#We had computed the residuals of a single model with a single data set earlier. Now, we have 142 data
+#frames and 142 models.  We need to call add_residuals() with each model-data pair:
+by_country <- by_country %>% 
+  mutate(
+    resids = map2(data, model, add_residuals)
+  )
+
+by_country
+
+#How can we plot a list of data frames?
+#Let's turn the list of data frames back into a regular data frame.  Previously, we used nest() to 
+#turn a regular data frame into a nested data frame, and now we do the opposite with unnest():
+resids <- unnest(by_country, resids)
+
+resids
+#Note each regular column is repeated once for each row in the nested column.  Now we can plot the results:
+
+resids %>% 
+  ggplot(aes(year, resid)) +
+  geom_line(aes(group=country), alpha = 1/3)+
+  geom_smooth(se=FALSE)
+#Interesting to residuals falling in the latter third...
+
+#Faceting by continent is interesting:
+resids %>% 
+  ggplot(aes(year, resid, group=country)) +
+  geom_line(alpha = 1/3) +
+  facet_wrap(~continent)
+#Our model doesn't appear to fit Africa very well.
+
+
+
+#25.2.4: *****************************Model Quality
+#Instead of looking at the residuals, we could look at some general measures of model quality.
+#Here, we'll use the broom package, broom::glance() to extract some model quality metrics:
+broom::glance(nz_mod)
+
+#We can use mutate() and unnest() to create a data frame with a row for each country:
+by_country %>% 
+  mutate(glance = map(model, broom::glance)) %>% 
+  unnest(glance)
+
+#This includes all of the list columns, which we don't really need.  Use .drop = TRUE:
+glance <- by_country %>% 
+  mutate(glance = map(model, broom::glance)) %>% 
+  unnest(glance, .drop = TRUE)
+
+glance
+
+#Now, we can look for models which don't fit well:
+glance %>% 
+  arrange(r.squared)
+#We can see, the worst models are all for African nations.  Let's double-check that with a plot:
+glance %>% 
+  ggplot(aes(continent, r.squared)) +
+  geom_jitter(width = 0.5)
+
+#Pull out the countries with particularly low R^2 and plot:
+bad_fit <- filter(glance, r.squared<0.25)
+
+bad_fit
+
+gapminder %>% 
+  semi_join(bad_fit, by="country") %>% 
+  ggplot(aes(year, lifeExp, color=country)) +
+  geom_line()
+#We see both the Rwandan genocide and the effect of HIV/AIDS
+
+
+#25.2.5: *****************************Exercises
+#1. A linear trend seems to be slightly too simple for the overall trend. 
+#Can you do better with a quadratic polynomial? 
+#How can you interpret the coefficients of the quadratic? (Hint you might want to transform year so that it has mean zero.)
+
+#2. Explore other methods for visualising the distribution of R^2 per continent. 
+#You might want to try the ggbeeswarm package, which provides similar methods for avoiding overlaps 
+#as jitter, but uses deterministic methods.
+
+#3. To create the last plot (showing the data for the countries with the worst model fits), 
+#we needed two steps: we created a data frame with one row per country and then semi-joined it 
+#to the original dataset. It???s possible to avoid this join if we use unnest() instead of unnest
+#(.drop = TRUE). How?
 
 
 
 #25.3: ***************************** List-columns *****************************
+#List columns are implcit in the definition of a data frame: a df is a names list of equal-length vectors.
+#However, Base R doesn't make it easy to create list-columns, and data.frame() treats a list as a list of columns:
+data.frame(x = list(1:3, 3:5))
 
+#We can prevent data.frame() from doing this, but the result doesn't print well:
+data.frame(
+  x = I(list(1:3, 3:5)),
+  y = c("1,2", "3,4,5")
+)
+  
+#Tibble alleviates this problem because it's "lazier" - it doesn't modify its inputs - and via a better print method:
+tibble(
+  x = list(1:3, 3:5),
+  y = c("1,2", "3,4,5")
+)
+  
+#tribble() is even easier: it can work out that we need a list
+tribble(
+  ~x, ~y,
+  1:3, "1,2",
+  3:5, "3,4,5"
+)
+
+#List-columns may be most useful as an intermediate data structure.
+
+#There are 3 parts of an effective list-olumn pipeline:
+  #1. Create a list-column using one of nest(), summarize() + list(), or mutate() + a map function.
+
+  #2. Create other intermediate list-columns by xforming existing list-columns using map(), map2(), or pmap().
+
+  #3. Simplify the list-column back down to a df or atomic vector, as described in 25.5
 
 
 #25.4: ***************************** Creating List-columns *****************************
+#Typically don't create list-columns with tibble(), but instead with ne of these three methods:
+  #1. With tidyr::nest() to convert a grouped df into a nested df with a list-column of names
+
+  #2. With mutate() and vectorized functions which return a list.
+
+  #3. With summarize() and summary functions which return multiple results.
+
+#Alternatively, we might create from a named list, using tibble::enframe().
+
+#Generally, the list-columns should be homogenous: each element should contain the same type of thing.
+  
+
+#25.4.1: *****************************   With Nesting
+#nest() creates a nested df, which is a df with a list-column of df's.
+#In a nested df, each row is a meta-observation: the other columns give variables which define the observation,
+#and the list-column of data frames gives the individual observations which make up the meta-observation.
+
+#Two ways to use nest():
+
+  #When applied to a df, nest() keeps the grouping columns as-is, and bundles the rest into the list-column:
+gapminder %>% 
+  group_by(country, continent) %>% 
+  nest()
+
+  #Can also use on an ungrouped data frame, specifiying which columns to nest:
+gapminder %>% 
+  nest(year:gdpPercap)
+
+
+#25.4.2: *****************************   From Vectorized Functions
+#Some useful functions take an atomic vector and return a list.  For example, we learned about stringr::str_split(),
+#which takes a character vector and returns a list of character vectors. 
+df <- tribble(
+  ~x1,
+  "a,b,c",
+  "d,e,f,g"
+)
+
+#If used inside mutate(), we get a list-column:
+df %>% 
+  mutate(x2 = stringr::str_split(x1, ","))
+
+#unnest() can handle these lists of vectors:
+df %>% 
+  mutate(x2 = stringr::str_split(x1, ",")) %>% 
+  unnest()
+
+#If using this pattern often, check out tidyr::separate_rows(), which is a wrapper around this common pattern.
+
+#Another example of this pattern is using the map(), map2(), and pmap() from purrr.
+#For example:
+sim <- tribble(
+  ~f,      ~params,
+  "runif", list(min = -1, max = 1),
+  "rnorm", list(sd = 5),
+  "rpois", list(lambda = 10)
+)
+
+sim %>% 
+  mutate(sims = invoke_map(f, params, n=10))
+
+
+
+#25.4.3: *****************************   From Multi-valued Summaries
+#One restriction of summarize() is it only works with summary functions that return a single value.
+#So, we can't use with functions like quantile() which return a vector of arbitrary length:
+?mtcars
+str(mtcars)
+head(mtcars)
+
+mtcars %>% 
+  group_by(cyl) %>%
+  summarize(q = quantile(mpg))
+#throws an error...
+
+#But... we can wrap the result in a list!
+mtcars %>% 
+  group_by(cyl) %>%
+  summarize(q = list(quantile(mpg)))
+#This is because it obeys the construct of summarize; each summary is now a list of length 1
+
+#To make useful results with unnest(), we'll need to capture the probabilities:
+probs <- c(0.01, 0.25, 0.5, 0.75, 0.99 )
+mtcars %>% 
+  group_by(cyl) %>%
+  summarize(p=list(probs), q = list(quantile(mpg))) %>% 
+  unnest()
+
+
+#25.4.4: *****************************   From a Named List
+#Data frames with list-columns provide a solution to a common problem:
+#What to do if you want to iterate over both the contents of a list and its elements?
+
+#Instead of trying to jam all into one object, it may be easier to make a data frame:
+#one column to contain the elements
+#one column to contain the list.
+#tibble::enframe() is an easy way to create such a df from a list:
+x <- list(
+  a = 1:5,
+  b = 3:4, 
+  c= 5:6
+)
+
+df <- enframe(x)
+
+df
+
+
+#25.4.5: *****************************   Exercises
+#1. List all the functions that you can think of that take a atomic vector and return a list.
+
+#2. Brainstorm useful summary functions that, like quantile(), return multiple values.
+
+#3. What's missing in the following data frame? How does quantile() return that missing piece? Why isn't that helpful here?
+  mtcars %>% 
+  group_by(cyl) %>% 
+  summarise(q = list(quantile(mpg))) %>% 
+  unnest()
+
+#4. What does this code do? Why might might it be useful?
+  mtcars %>% 
+  group_by(cyl) %>% 
+  summarise_each(funs(list))
 
 
 
 #25.5: ***************************** Simplifying List-columns *****************************
+#To apply the data manipulation and viz efforts we've learned, we need to simplify the list column
+#back into a regular atomic column or a set of columns.
+  
+  #If we want a single value, use mutate() with map_lgl(), map_int(), map_dbl(), and map_chr() 
+  #to create an atomic vector.
+
+  #If we want many values, use unnest() to convert list-columns back to regular columns, repeating
+  #rows as many times as necessary.  
+
+#25.5.1: ***************************** List to Vector
+#If we can reduce our list-column to an atomic vector then it will be a regular column.  For example, 
+#we can always summarize an object with its type and length, so this code will work regardless:
+df <- tribble(
+  ~x,
+  letters[1:5],
+  1:3,
+  runif(5)
+)
+
+df %>% mutate(
+  type = map_chr(x, typeof),
+  length = map_int(x, length)
+)
+#THis is the same info we get from the default tbl print method, but now we can use for filtering.
+
+#Don't forget the map_*() shortcuts.  We can use map_chr(X, "apple") to extract the string stored in apple for each element of x.
+#This is useful for pulling apart nested lists into regular columns.
+
+#Use the .null() argument to provide a value to use if the element is missing (instead of returning NULL):
+df <- tribble(
+  ~x,
+  list(a=1, b=2),
+  list(a=2, c=4)
+)
+
+df %>% mutate(
+  a = map_dbl(x, "a"),
+  b = map_dbl(x, "b", .null = NA_real_)
+)
+
+
+#25.5.2: ***************************** Unnesting
+#unnest() works by repeating the regular columns once for each element of the list-column.
+#For example, below we repeat the first row 4 times, and the second row once:
+tibble(x=1:2, y=list(1:4,1)) %>% unnest(y)
+
+#This means we can't simultaneously unnest 2 columns that contain a different # of elements:
+
+# Ok, because y and z have the same number of elements in every row:
+df1 <- tribble(
+  ~x, ~y,           ~z,
+  1, c("a", "b"), 1:2,
+  2, "c",           3
+)
+df1
+
+df1 %>% unnest(y, z)
+
+# Doesn't work because y and z have different number of elements
+df2 <- tribble(
+  ~x, ~y,           ~z,
+  1, "a",         1:2,  
+  2, c("b", "c"),   3
+)
+
+df2
+
+df2 %>% unnest(y, z)
+
+
+
+#25.5.3: ***************************** Exercises
+#1. Why might the lengths() function be useful for creating atomic vector columns from list-columns?
+
+  #2. List the most common types of vector found in a data frame. What makes lists different?
 
 
 
 #25.6: ***************************** Making Tidy Data with Broom *****************************
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
