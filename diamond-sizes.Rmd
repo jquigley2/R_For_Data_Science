@@ -1,0 +1,50 @@
+---
+title: "Diamond sizes"
+date: 2016-08-25
+output: html_document
+params:
+  my_class: "suv"
+---
+
+```{r setup, include = FALSE}
+library(ggplot2)
+library(dplyr)
+
+smaller <- diamonds %>% 
+  filter(carat <= 2.5)
+```
+
+We have data about `r nrow(diamonds)` diamonds. Only 
+`r nrow(diamonds) - nrow(smaller)` are larger than
+2.5 carats. The distribution of the remainder is shown
+below:
+
+```{r, echo = FALSE}
+smaller %>% 
+  ggplot(aes(carat)) + 
+  geom_freqpoly(binwidth = 0.01)
+```
+
+The most striking element of this output right around .3, .7, and 1 carat.
+
+Just kidding - it's the dynamically calculated text elements!!
+
+```{r}
+knitr::kable(
+  mtcars[1:5, ], 
+  caption = "A knitr kable."
+)
+```
+
+
+```
+class <- mpg %>% filter(class == params$my_class)
+```
+
+# Fuel economy for `r params$my_class`s
+
+```{r, message = FALSE}
+ggplot(class, aes(displ, hwy)) + 
+  geom_point() + 
+  geom_smooth(se = FALSE)
+```

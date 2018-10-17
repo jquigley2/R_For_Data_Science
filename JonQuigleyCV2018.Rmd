@@ -1,0 +1,183 @@
+---
+title: "My CV"
+author: "Jon Quigley"
+date: "September 28, 2018"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# JQ's CV
+
+## Work Experience
+
+*   CIO - Disciplined Equity Team, Great Lakes Advisors  __2013-present__
+
+*   co-CIO - Advanced Investment Partners __2011-2013__
+
+*   Senior Portfolio Manager - Advanced Investment Partners __2007-2011__
+
+*   Portfolio Manager - Advanced Investment Partners __2000-2007__
+
+*   Portfolio Manager, Research Analyst - LBS Capital Management __1998-2000__
+
+*   Director, Investor Services - LBS Capital Management  __1997-1998__
+
+*   Investor Services Associate - LBS Capital Management  __1995-1997__
+
+    * Served as a liaison between our financial advisor clients and our internal research, sales, marketing and operations teams.  Learned to interact with clients and advisors, as well as develop an understanding of the overall business.
+
+## Education
+
+*   Masters of Science, Predictive Analytics 
+
+    * Northwestern University __2017__
+
+
+*   BS, Economics
+
+    * Wake Forest University __1994__
+
+***
+
+## Designations
+
+* Chartered Financial Analyst, __2000__
+
+##Skills
+
+* R
+
+* SQL
+
+* Advanced Excel User
+
+View my [LinkedIn][1] profile.
+
+## Community
+
+[1]: https://www.linkedin.com/in/jonq1/ "LinkedIn"
+
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+#Emphasis  
+*italic*   **bold**  
+_italic_   __bold__  
+
+#Headers:  
+# Header 1  
+## Header 2  
+### Header 3  
+
+#Lists  
+* Item 1
+* Item 2
+    + Item 2a
+    + Item 2b  
+    
+#Numbered Lists:      
+1. Item 1
+2. Item 2
+3. Item 3
+    + Item 3a
+    + Item 3b
+    
+#Manual Line Breaks:  
+End a line with 2 or more spaces:    
+Roses are red,   
+Violets are blue.  
+
+#Links  
+http://example.com
+[linked phrase](http://example.com)  
+
+#Images  
+![alt text](http://example.com/logo.png)
+![alt text](figures/img.png)
+
+#Blockquotes:  
+A friend once said:
+
+> It's always better to give 
+> than to receive.  
+
+#R code blocks:  
+```{r}
+summary(cars$dist)
+summary(cars$speed)
+```
+
+#Inline R Code  
+There were `r nrow(cars)` cars studied  
+
+#Plain Code Blocks
+```
+This text is displayed verbatim / preformatted
+```
+
+#Inline Code  
+We defined the `add` function to 
+compute the sum of two numbers.
+
+#LaTeX Equations  
+Inline Equation  $=1+2$
+
+#Display Equation  
+$$ a + b = c $$
+
+#Horizontal Rule / Page Break  
+Three or more asterisks or dashes:  
+***********  
+-----------  
+
+#Tables  
+First Header  | Second Header
+------------- | -------------
+Content Cell  | Content Cell
+Content Cell  | Content Cell  
+
+#Reference Style Links and Images:  
+A [linked phrase][id]. 
+
+At the bottom of the document:  
+[id]: http://example.com/ "Title"
+
+
+#Images  
+![alt text][id]
+
+At the bottom of the document:
+
+[id]: figures/img.png "Title"
+
+#Miscellaneous  
+superscript^2^
+
+subscript~2~
+
+~~strikethrough~~
+
+```{r by-name}
+
+```
+
+
