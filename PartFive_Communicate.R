@@ -338,15 +338,159 @@ csl: apa.csl
 
 #28: ******************************* Graphics for Communication *****************************
 #28.1: ******************************* Introduction
-
+#28.1.1: ***************************** Prerequisites
+#Rather than loading ggplot2 extensions from packages such as ggrepel and viridis here, we'll refer to their functions
+#explicitly, via :: notation.
+library(tidyverse)
 
 
 #28.2: ******************************* Label
+#Easiest way to start turning exploratory into expository graphics is via good labeling:
+
+#add a title:
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(color=class)) +
+  geom_smooth(se = FALSE) +
+  labs(title = "Fuel Efficiency generally decreases with engine size:")
+
+#Use the title to explain the findings, not just what's in the plot.
+#Two additional labels:
+  #subtitle - adds additional detail in smaller font
+  #caption - adds text at the bottom right of the plot - great for noting source of data
+
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(color=class)) +
+  geom_smooth(se = FALSE) +
+  labs(title = "Fuel Efficiency generally decreases with engine size...",
+       subtitle = "with the exception of 2 seaters (due to their light weight)",
+       caption = "data from fueleconomy.gov")
+
+#Use labs() to replace the axis and legend titles, using more detailed variable names with units:
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(color=class)) +
+  geom_smooth(se = FALSE) +
+  labs(title = "Fuel Efficiency generally decreases with engine size...",
+       subtitle = "with the exception of 2 seaters (due to their light weight)",
+       caption = "data from fueleconomy.gov",
+       x = "Engine Displacement (litres)", 
+       y = "Hwy Fuel Economy (mpg)", 
+       color = "Car Type")
+
+#Can use mathematical equations instead of text strings; just switch out "" for quote().
+#Read about the available options in 
+?plotmath
+
+#generate a df:
+df <- tibble(
+  x = runif(10),
+  y = runif(10)
+)
+
+#plot the df:
+ggplot(df, aes(x, y)) +
+  geom_point() +
+  labs(
+    x = quote(sum(x[i] ^ 2, i == 1, n)),
+    y = quote(alpha + beta + frac(delta, theta))
+  )
+
+#28.2.1: ******************************* Exercises
+#1. Create one plot on the fuel economy data with customized title, subtitle, caption, x, y, and colour labels.
+
+#2. The geom_smooth() is somewhat misleading because the hwy for large engines is skewed upwards due to 
+#the inclusion of lightweight sports cars with big engines. 
+#Use your modelling tools to fit and display a better model.
+
+#3. Take an exploratory graphic that you???ve created in the last month, and add informative titles to make it easier for others to understand.
 
 
 
 #28.3: ******************************* Annotations
+#it's often useful to label individual observations or groups of observations.
+#geom_text() is the first tool to try.
 
+#Two possible sources of labels:
+  #1. You may have a tibble which provides labels.  Here, we pull out the most efficient car in each class 
+  #with dplyr, then label it on the plot:
+
+best_in_class <- mpg %>%
+  group_by(class)%>%
+  filter(row_number(desc(hwy)) == 1)
+
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(colour = class)) +
+  geom_text(aes(label = model), data = best_in_class)
+#hard to read!
+
+#Switching to geom_label() draws a rectangle behind the text, which makes this easier to read, and...
+#we use nudge_y parameter to move the labels slightly above the corresponding points:
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(colour = class)) +
+  geom_label(aes(label = model), data = best_in_class, nudge_y = 2, alpha = 0.5)
+#New Beetle and Jetta are still on top of each other...
+
+#Use ggrepel to adjust labels and prevent overlap:
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(color = class)) +
+  geom_point(size = 3, shape = 1, data = best_in_class) + #adds a second layer of large, hollow points
+  ggrepel::geom_label_repel(aes(label = model), data = best_in_class)
+
+#If we want a single label in the upper righthand corner of the plot, we can create a new df using summarize()
+#to compute the max values of x and y to determine positioning:
+label <- mpg %>%
+  summarise(
+    displ = max(displ), 
+    hwy = max(hwy),
+    label = "Increasing engine size is \nrelated to decreasing fuel economy." #use \n to break the text line
+  )
+
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point() +
+  geom_text(aes(label = label), data = label, vjust = "top", hjust = "right")
+
+#If you want the text right on the borders, use +Inf and -Inf:
+label <- tibble(
+  displ = Inf,
+  hwy = Inf,
+  label = "Increasing engine size is \nrelated to decreasing fuel economy."
+) 
+
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point() + 
+  geom_text(aes(label = label), data = label, vjust = "top", hjust = "right")
+
+#Can also use stringr::str_wrap() to automatically add line breaks, given the number of characters you want per line:
+"Increasing engine size is related to decreasing fuel economy." %>%
+  stringr::str_wrap(width = 40) %>%
+  writeLines()
+
+#hjust can take left, center or right, and vjust can take top, center, or bottom  
+
+#In addition to geom_text, there are many other geoms available to annotate the plots:
+
+  #geom_hline() and geom_vline() add reference lines.  Can make them thick (size = 2) and white (color = white),
+  #and lay them in under the plot.
+
+  #use geom_rect() to draw a rectangle around points of interest.  Set the perimter via xmin, xmax, ymin, ymax
+
+  #geom_segment() with the "arrow" argument to draw attention to a point with an arrow.  Use aesthetics x and y 
+  #to map starting point, and xend and yend to define the end location
+
+
+#28.3.1: ******************************* Exercises
+#1. Use geom_text() with infinite positions to place text at the four corners of the plot.
+
+#2. Read the documentation for annotate(). How can you use it to add a text label to a plot without 
+#having to create a tibble?
+  
+#3. How do labels with geom_text() interact with faceting? 
+#How can you add a label to a single facet? 
+#How can you put a different label in each facet? (Hint: think about the underlying data.)
+
+#4. What arguments to geom_label() control the appearance of the background box?
+  
+#5. What are the four arguments to arrow()? How do they work? 
+#Create a series of plots that demonstrate the most important options.
 
 
 #28.4: ******************************* Scales
