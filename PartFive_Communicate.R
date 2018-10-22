@@ -552,34 +552,125 @@ presidential %>%
 
 #To control the overall position of the legend, use a theme() setting.  
 #Themes control the non-data portion of the plots.
-#
+#"legend.position" controls where the legend is drawn:
+base <- ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(color = class))
+
+base + theme(legend.position = "left")
+base + theme(legend.position = "top")
+base + theme(legend.position = "bottom")
+base + theme(legend.position = "right") #the default
+#Or, use legend.position = "none" to suppress the legend display.
+
+#Control the individual legends by using guides() along with guide_legend() or guide_colorbar().
+
+#This example shows how to control the # of rows via nrow, and how to override an aesthetic to make the points bigger.
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(color = class)) +
+  geom_smooth(se = FALSE) +
+  theme(legend.position = "bottom") +
+  guides(color = guide_legend(nrow = 1, override.aes = list(size = 4)))
 
 
 #28.4.3: ******************************* Replacing a Scale
+#Two types of scales most commonly switched out are continuous position scales and color scales.
 
+#Example:
+#As described earlier, we can better see the relation between carats and price if we log xform the variables:
+ggplot(diamonds, aes(carat, price)) +
+  geom_bin2d()
+
+ggplot(diamonds, aes(log10(carat), log10(price))) +
+  geom_bin2d()
+
+#However, now the axes are labeled with xformed values, which are hard to interpret.
+#We can xform the axes to the original form:
+ggplot(diamonds, aes(carat, price)) +
+  geom_bin2d() +
+  scale_x_log10() +
+  scale_y_log10()
+
+#Color scale is also often customized, say to the Color Brewer scale, which is geared to address color blindness.
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(color = drv))
+
+#using color brewer:
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(color = drv)) +
+  scale_color_brewer(palette = "Set1") #http://colorbrewer2.org/ 
+
+#A simpler technique is adding a redundant shape mapping:
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(color = drv, shape = drv)) +
+  scale_color_brewer(palette = "Set1")
+
+#You may have a pre-defined color mapping, say Blue for Dems, Red for Republicans:
+presidential %>% 
+  mutate(id = 33 + row_number()) %>% 
+  ggplot(aes(start, id, color = party)) +
+  geom_point() +
+  geom_segment(aes(xend = end, yend = id)) +
+  scale_color_manual(values = c(Republican = "red", Democratic = "blue"))
+
+#Or, for continuous color, use the built-in scale_color_gradient() or scale_fill_gradient().
+#If you have a diverging scale, use scale_color_gradient2 (you can give positive values different 
+#colors than you give negative values, or distinguish above vs. below mean).
+
+#Another option is scale_color_viridis() from the viridis package.This gives a continuous analog of
+#the ColorBrewer scales.  An example:
+df <- tibble(
+  x = rnorm(10000),
+  y = rnorm(10000)
+)
+
+ggplot(df, aes(x,y)) +
+  geom_hex() +
+  viridis::scale_fill_viridis() +
+  coord_fixed()
 
 
 #28.4.4: ******************************* Exercises 
+#1. Why doesn???t the following code override the default scale?
+ggplot(df, aes(x, y)) +
+  geom_hex() +
+  scale_colour_gradient(low = "white", high = "red") +
+  coord_fixed()
 
+#2. What is the first argument to every scale? How does it compare to labs()?
+  
+#3. Change the display of the presidential terms by:
+  
+  #a. Combining the two variants shown above.
+  #b. Improving the display of the y axis.  
+  #c. Labelling each term with the name of the president.
+  #d. Adding informative plot labels.
+  #e. Placing breaks every 4 years (this is trickier than it seems!).
 
-
-#28.4.1 ****************************** Axis ticks and legend keys
-
-
-
-#28.4.2 ****************************** Legend Layout
-
-
-
-#28.4.3 ****************************** Replacing a scale
-
-
-
-#28.4.4 ****************************** Exercises 
+#4. Use override.aes to make the legend on the following plot easier to see:
+ggplot(diamonds, aes(carat, price)) +
+  geom_point(aes(colour = cut), alpha = 1/20)
 
 
 
 #28.5: ******************************* Zooming
+#Three ways to control plot limits:
+  #1. Adjust what data are plotted
+  #2. Set the limits in each scale
+  #3. Setting xlim and ylim in coord_cartesian()
+
+#To zoom into one region, it's best to use coord_cartesian():
+
+ggplot(mpg, mapping = aes(displ, hwy)) +
+  geom_point(aes(color = class)) +
+  geom_smooth() +
+  coord_cartesian(xlim = c(5,7), ylim = c(10, 30))
+
+mpg %>% 
+  filter(displ >= 5, displ <= 7, hwy >10, hwy <=30) %>% 
+  ggplot(aes(displ, hwy)) +
+  geom_point(aes(color = class)) +
+  geom_smooth()
+
 
 
 
