@@ -459,12 +459,12 @@ ggplot(mpg, aes(displ, hwy)) +
   geom_point() + 
   geom_text(aes(label = label), data = label, vjust = "top", hjust = "right")
 
+#hjust can take left, center or right, and vjust can take top, center, or bottom  
+
 #Can also use stringr::str_wrap() to automatically add line breaks, given the number of characters you want per line:
 "Increasing engine size is related to decreasing fuel economy." %>%
   stringr::str_wrap(width = 40) %>%
   writeLines()
-
-#hjust can take left, center or right, and vjust can take top, center, or bottom  
 
 #In addition to geom_text, there are many other geoms available to annotate the plots:
 
@@ -494,6 +494,72 @@ ggplot(mpg, aes(displ, hwy)) +
 
 
 #28.4: ******************************* Scales
+#3rd way to improve plots for communication is adjusting the scales.
+#ggplot2 automatically adds scales.  For example:
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(color=class))
+
+#ggplot2 automatically adds scales behind the scenes:
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(color=class)) +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  scale_color_discrete()
+#Note the naming scheme for scales:
+  #scale_ followed by name of aesthetic, then _, then name of scale.
+  #Default scales are:
+    #continuous
+    #discrete
+    #datetime
+    #date
+#There are many non-default scales as well.
+
+
+#28.4.1: ******************************* Axis Ticks & Legend Keys
+#"breaks" and "labels" are the two primary ways to affect the appearance of ticks on the axes and keys.
+#Breaks control the position of the ticks
+#Labels control the text label associated with each tick/key
+
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point() +
+  scale_y_continuous(breaks = seq(15, 40, by = 5)) #min, max, by
+
+#Use labels the same way, or set to null to suppress the labels altogether:
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point() +
+  scale_x_continuous(labels = NULL) +
+  scale_y_continuous(labels = NULL)
+
+#Breaks and labels can also control the appearance of legends.  Collectively,
+#breaks and legends are called GUIDES.
+#Axes are used for x and y aesthetics; legends are used for everything else.
+
+#breaks can also be used when we have few data points and want to highlight the 
+#exact start and end dates of the observations:
+presidential %>% 
+  mutate(id = 33 + row_number()) %>% 
+  ggplot(aes(start, id)) +
+  geom_point() +
+  geom_segment(aes(xend = end, yend = id)) +
+  scale_x_date(NULL, breaks = presidential$start, date_labels = "'%y")
+#The specs of breaks and labels for date and datetime scales are a bit different:
+  #date_labels take a format specification, in the same from as parse_datetime().
+  #date_breaks (not shown) take a string like "2 days" or 1 Month".
+
+
+#28.4.2: ******************************* Legend Layout
+#There are better ways to tweak legends than breaks and labels.
+
+#To control the overall position of the legend, use a theme() setting.  
+#Themes control the non-data portion of the plots.
+#
+
+
+#28.4.3: ******************************* Replacing a Scale
+
+
+
+#28.4.4: ******************************* Exercises 
 
 
 
@@ -502,7 +568,7 @@ ggplot(mpg, aes(displ, hwy)) +
 
 
 #28.6: ******************************* Themes
-
+                               
 
 
 #28.7: ******************************* Saving Plots
