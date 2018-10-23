@@ -654,84 +654,406 @@ ggplot(diamonds, aes(carat, price)) +
 
 #28.5: ******************************* Zooming
 #Three ways to control plot limits:
-  #1. Adjust what data are plotted
-  #2. Set the limits in each scale
-  #3. Setting xlim and ylim in coord_cartesian()
 
-#To zoom into one region, it's best to use coord_cartesian():
-
+#1. Setting xlim and ylim in coord_cartesian()
 ggplot(mpg, mapping = aes(displ, hwy)) +
   geom_point(aes(color = class)) +
   geom_smooth() +
   coord_cartesian(xlim = c(5,7), ylim = c(10, 30))
 
+#2. Adjust what data are plotted
 mpg %>% 
   filter(displ >= 5, displ <= 7, hwy >10, hwy <=30) %>% 
   ggplot(aes(displ, hwy)) +
   geom_point(aes(color = class)) +
   geom_smooth()
 
+#3. Set the limits in each scale
+#THis is essentially equivalent to subsetting the data.  It's very useful when 
+#expanding the limits to match scales across different plots; it can be difficult to 
+#compare plots when the scale is different:
+suv <- mpg %>% filter(class == "suv")
+compact <- mpg %>% filter(class == "compact")
 
+ggplot(suv, aes(displ, hwy, color = drv)) +
+  geom_point()
+
+ggplot(compact, aes(displ, hwy, color = drv)) +
+  geom_point()
+#Hard to compare these 2 sets!
+
+#Share the scale across multiple plots by training the scales with the limits of the full data:
+x_scale <- scale_x_continuous(limits = range(mpg$displ))
+y_scale <- scale_y_continuous(limits = range(mpg$hwy))
+col_scale <- scale_color_discrete(limits = unique(mpg$drv))
+
+ggplot(suv, aes(displ, hwy, color = drv)) +
+  geom_point() +
+  x_scale +
+  y_scale +
+  col_scale
+
+ggplot(compact, aes(displ, hwy, color = drv)) +
+  geom_point() +
+  x_scale +
+  y_scale +
+  col_scale
+
+#We could have also used faceting here...
 
 
 #28.6: ******************************* Themes
-                               
+#Can customize non-data elements of a plot with 8 assorted themes:
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(color = class)) +
+  geom_smooth(se = FALSE) +
+  theme_bw() #white background with gridlines
+
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(color = class)) +
+  geom_smooth(se = FALSE) +
+  theme_classic() #Classic theme, axes w/o gridlines
+
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(color = class)) +
+  geom_smooth(se = FALSE) +
+  theme_minimal() #Minimal theme, no background
+
+#Many more themes available via packages like ggthemes (https://github.com/jrnold/ggthemes)
+#You can also create you own themes to match a corporate style.
 
 
 #28.7: ******************************* Saving Plots
+#Two main methods for getting plots out of R and into the final document:  ggsave() and knitr.
 
+ggplot(mpg, aes(displ, hwy)) + 
+  geom_point()
+
+ggsave("my-plot.pdf")
 
 
 #28.7.1: ******************************* Figure Sizing
+#Getting graphics to be the right size and shape in Markdown is a challenge.
+#Five main options for controlling figure size:
+  #fig.width, fig.height, fig.asp, out.width, and out.height.
 
+#Can usually use 3 of the 5 options:
+  #To enforce consistent width, set fig.width = 6 (6") and fig.asp = 0.618 (the golden ratio) in the defaults.
+  #Then, in idividual chunks, you need only adjust fig.asp.
+
+  #Control the output size with out.width, and set it to a % of the line width.  Defaulting to out.width = "70%"
+  #and fig.align = "center" give room to breathe.
+
+  #To show multiple plots on a single row, set fig.align = "default", and adjust % in out.width per the number of 
+  #plot (out.width = "33%" for 3 plots, for example).
+
+#If you want font size to be consistent across all figures, adjust fig.width whenever you adjust out.width.
+#For eample, if default fig.width = 6, and default out.width = 70%, if you adjust out.width to 50%, you need to adjust 
+#fig.width to 4.3 (6 * )
 
 
 #28.7.2: ******************************* Other Important Options
+#Set fig.show = "hold" when mingling code and text - makes plots appear after the code.  
+#This also makes you break up large chunks of code with explanations.
 
+#To add a cpation to a plot, use fig.cap, which changes the figure from inline to floating in R Markdown.
+
+#Name code chunks which produce figures, as it's used to generate a file name for the graphic.  This way,
+#you can find the plot and re-use it in other publications.
 
 
 #28.8: ******************************* Learning More
-
+#https://amzn.com/331924275X
 
 
 #29: ******************************* R Markdown formats *****************************
 #29.1: ******************************* Introduction
+#There are multiple output formats from R Markdown.  Two ways to set the output:
+  #1. Permanently, by modifying the YAML header:
+title: "Viridis Demo"
+output: html_document
 
+  #2. Transiently, by calling rmarkdown::render():
+rmarkdown::render("diamond-sizes.Rmd", output_format = "word document")
+
+#This is useful if you want to produce multiple forms of output.
+#The Knit button in RStudio defaults to the first format listed in its output field.  You'd have to select another 
 
 
 #29.2: ******************************* Output Options
+#Each output format is associated with an R function.  
+#Important to know the name of the function that makes the output, in order to get help.
+#For example, look at ?rmarkdown::html_document to figure out what parameters we can set:
+?rmarkdown::html_document
 
+#For example, if we want to render an html_document with a floating table of contents:
+output:
+  html_document:
+    toc: true
+    toc_float: TRUE
+    
+#Or, to render multiple outputs:    
+output:
+  html_document:
+    toc: true
+    toc_float: true
+  pdf_document: true    
 
-
+      
 #29.3: ******************************* Documents
-
+#Variations on the default html_document output format include:
+  #pdf_document makes a PDF with LaTex
+  #word_document for MS Word documents
+  #odt_document for OpenDocument Text documents
+  #rtf_document for Rich Text Format documents
+  #md_document for a markdown document
+  #github_document a tailored version of md_document for sharing on GitHub
+  
+#Recall, to turn off the default display of code, set the global option to do so:
+  knitr::opts_chunk$set(echo = FALSE)
+  
+#In html, you can hide chunks by default - but allow them to be viewed with click:
+output:
+  html_document:
+    code_folding: hide
 
 
 #29.4: ******************************* Notebooks
+#html_notebooks are a variation on html_documents, focused on collaborating with outher data scientists.
+#Both contain the fully-rendered output, but the notebook also contains the full source code.
+#So, you can use the .nb.html generated by the notebook in two ways:
 
+  #1. View in a browser and see the rendered output, including an embedded copy of the source code.
+
+  #2. Edit it in R Studio.  When you open an .nb.html, R Studio automatically recreates the .Rmd file
+#that generated it.  ISoon, you can also include the support files (such as .csv files), which will 
+#automatically be extracted as needed.
+
+#Emailing .nb.html files is a great way to share analysis, but not ideal if a colleague wants to edit.
+#Using Git and GitHub is much better for that purpose.  So, you can use both outputs:
+
+output:
+  html_notebook: default
+  github_document: default
 
 
 #29.5: ******************************* Presentations
-
-
+#R Markdown can produce presentations.  Less visual control than with power point, but can
+#save a lot of time.
+  
+#Divide content into slides, with a new slide beginning each first (#) or second (##) level header.
+#Can also insert a horizontal rule (***) to create a new slide without a header.
+  
+#Three built-in headers with R Markdown:
+  #1. ioslides_presentation HTML presentation with ioslides
+  #2. slidy_presentation HTML presentation with W3C Slidy
+  #3. beamer_presentation PDF presentation with LaTeX Beamer
+  
+#Two other popular formats:
+  #1. revealjs::revealjs_presentation - requires the revealjs package
+  #2. rmdshower provides a wrapper around the shower presentation engine.
+  
 
 #29.6: ******************************* Dashboards
+#Flexdashboard makes it easy to create dashboards using R Markdown and a convention for how headers affect the layout:
+  
+#Each level 1 header (#) begins a new page in the dashboard
+#Each level 2 header (##) begins a new column
+#Each level 3 header (###) begins a new row
+  
+#For example:
+---
+title: "Diamonds Distribution Dashboard"
+output: flexdashboard::flex_dashbord
+---  
+
+```{r setup, include = FALSE}
+library(ggplot2)
+library(dplyr)
+knitr::opts_chunk$set(fig.width = 5, fig.asp = 1/3)
+```
+
+##Column 1
+
+###Carat
+```{r}
+ggplot(diamonds, aes(carat)) + geom_histogram(binwidth = 0.1)
+```
+
+###Cut
+```{r}
+ggplot(diamonds, aes(cut)) + geom_bar()
+```
+
+###Color
+```{r}
+ggplot(diamonds, aes(color)) + geom_bar()
+```
 
 
+##Column 2
 
+###The Largest Diamonds
+```{r}
+diamonds %>% 
+  arrange(desc(carat)) %>% 
+  head(100) %>% 
+  select(carat, cut, color, price) %>% 
+  DT::datatable()
+```
+
+#To create, select File>New File> R Markdown>From Template>Flex Dashboard
+
+#Can also create sideboards, tabsets, value boxes, and gauges.
+
+#To learn more: http://rmarkdown.rstudio.com/flexdashboard/
+
+  
 #29.7: ******************************* Interactitivty
+#Any HTML format (document, notebook, presentation, dashboard) can contain interactive components.
+
+#29.7.1: ******************************* htmlwidgets
+#htmlwidgets are R functions that produce interactive HTML visualizations
+#For example, take the leaflet map below.  Markdown will insert a static screenshot, but when viewed in a browser...
+library(leaflet)
+leaflet() %>% 
+  setView(174.764, -36.877, zoom = 16) %>%  
+  addTiles()  %>% 
+  addMarkers(174.764, -36.877, popup = "Maungawhau") 
+
+#Don't need to know HTML or JavaScript to use these widgets, and there are a variety of options, including:
+#dygraphs for interactive time series: http://rstudio.github.io/dygraphs
+#DT for interative tables: http://rstudio.github.io/DT/
+#threejs for interactive 3D plots: https://github.com/bwlewis/rthreejs
+#DiagrammeR for diagrams: http://rich-iannone.github.io/DiagrammeR/
+#Plotly for interactivity: https://plot.ly/r/
+#d3heatmap for interactive heatmaps with d3: https://github.com/rstudio/d3heatmap
+#formattable: https://renkun-ken.github.io/formattable/
 
 
+#For more:  http://www.htmlwidgets.org/
+
+
+#29.7.2: ******************************* Shiny
+#html widgets provide client-side interactivity.  You can distribute the html without any connection to R, but 
+#you are limited to things produced using HTML and Javascript.
+
+#Shiny gives us an alternative.  To call Shiny from an R Markdown document, add runtime::shiny to the header:
+title: "Shiny Web App"
+output: html_document
+runtime: shiny
+
+#Then use the input functions to add interactive compnents to the document:
+library(shiny)
+
+textInput("name", "What is your name?")
+numericInput("age", "How old are you?", NA, min = 4, max = 120)
+
+#Refer to the values with input$name and input$age, and the code using these will automatically re-run when 
+#they change.
+
+#More here:  http://shiny.rstudio.com/
 
 #29.8: ******************************* Websites
-
+#Read more at http://rmarkdown.rstudio.com/rmarkdown_websites.html
 
 
 #29.9: ******************************* Other formats
+#bookdown makes it easy to write books:  http://www.bookdown.org
 
+#prettydoc provides lightweight document formats with a range of attractive themes: https://github.com/yixuan/prettydoc/
+
+#rticles compiles a selection of formats tailored for specific scientific journals: https://github.com/rstudio/rticles
+
+#See more here:  http://rmarkdown.rstudio.com/formats.html
 
 
 #29.10: ******************************* Learning More
 
 
 #30: ******************************* R Markdown Workflow *****************************
+#R Markdown allows allows us to rapidly iterate within a chunk, editing and re-executing 
+#with Cmd/Ctrl + Shit + Enter
+
+#R Markdown makes a great analysis notebook because you can develop code and record your thoughts.
+#An analysis notebook has many of the same goals as a classic lab notebook in the physical sciences:
+
+  #Record what you did and why.
+
+  #Supports rigorous thinking.  If you record your thoughts as you go and continue to reflect on them, 
+  #your analysis will be stronger and easier to document.
+
+  #Makes it easier to share what you did and why with your teammates.
+
+#Some tips on an effective lab notebook:
+
+  #Give each notebook a descriptive title, an evocative filename, and a descriptive first paragraph.
+
+  #Use the YAML header date field to record the date you began your analysis in YYYY-MM-DD format.
+
+  #If your analysis idea hits a dead end, make sure you write a brief note about why it failed.
+
+  #Better off doing data entry outside of R, but if you need to record a small snippet of data, 
+  #clearly lay it out using tibble::tribble().
+
+  #If you discover an error in a data file, write code to correct the value rather than fixing it directly.
+  #Record the reason for the fix.
+
+  #Before endig for the day, make sure you can knit the notebook (if caching, clear the caches), so that
+  #you can fix problems while still fresh.
+
+  #Use packrat
+
+  #Store the notebooks in individual projects
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
